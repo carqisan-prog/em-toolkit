@@ -29,12 +29,12 @@ sec('analgesia',5,'Analgesia, Anesthesia & Procedural Sedation','💉','soon',[]
 sec('wound',6,'Wound Management','🩹','soon',[],[
  ('Wound evaluation',''),('Wound preparation',''),('Wound closure',''),('Face & scalp lacerations',''),('Arm, forearm & hand lacerations',''),
  ('Thigh, leg & foot lacerations',''),('Soft-tissue foreign bodies',''),('Puncture wounds & bites (incl. rabies PEP)',''),('Post-repair care & tetanus prophylaxis','')])
-sec('cardio',7,'Cardiovascular Disease','❤️','built',[('cardio','Cardiovascular')],[
+sec('cardio',7,'Cardiovascular Disease','❤️','built',[('cardio','Cardiovascular'),('ecg','ECG reader')],[
  ('Chest pain','new'),('Acute coronary syndromes / STEMI timelines','new'),('Cardiogenic shock','new'),('Low-probability ACS (HEART score)','new'),
  ('Syncope',''),('Acute heart failure','new'),('Valvular emergencies',''),('Cardiomyopathies & pericardial disease (pericarditis, myocarditis, tamponade)','new'),
  ('Venous thromboembolism incl. PE','merged'),('Systemic hypertension / hypertensive emergencies','new'),('Pulmonary hypertension',''),
  ('Aortic dissection & acute aortic syndromes (ADD-RS)','new'),('Aneurysmal disease (AAA)','new'),('Arterial occlusion',''),
- ('Brady/tachy/unstable arrhythmias (app – linked to ACLS & code timer)','v1+new')])
+ ('Brady/tachy/unstable arrhythmias (app – linked to ACLS & code timer)','v1+new'),('ECG reader – offline automated draft read (app)','new')])
 sec('pulm',8,'Pulmonary Disorders','🌬️','merged',[('pulm','Pulmonary')],[
  ('Respiratory distress & respiratory failure (NIV/HFNC)','merged'),('Hemoptysis','merged'),('Acute bronchitis & upper respiratory infections',''),
  ('Community-acquired & aspiration pneumonia','merged'),('Empyema & lung abscess / pleural effusion','merged'),('Tuberculosis',''),('Pneumothorax','merged'),

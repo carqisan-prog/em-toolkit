@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0d0f12">
+<link rel="icon" href="data:,">
+<title>ECG Reader – automated draft interpretation (offline)</title>
+<meta name="description" content="Offline browser ECG reader: filtering, Pan-Tompkins QRS detection, interval measurement and rule-based draft interpretation. Not a medical device.">
+<style>
+  :root{--bg:#fff;--fg:#1a1a1a;--muted:#555;--card:#f4f7fb;--border:#ccc;--input:#fff;--accent:#0a66c2;--warn:#8a5a00;--ok:#0b5;--hl:#ffe9a8;--red:#c0392b;--redbg:#fdecea;--peds:#7b3fb5;
+        --paper:#fffafa;--gridS:#f6d3d3;--gridL:#e79a9a;--trace:#111;--warnbg:#fff4dc}
+  body.dark{--bg:#0d0f12;--fg:#e6e6e6;--muted:#9aa3ad;--card:#1a1e24;--border:#333a44;--input:#14181d;--accent:#5aa9ff;--warn:#d9a441;--ok:#4cd28a;--hl:#3a3216;--red:#e5533f;--redbg:#2b1512;--peds:#b98aff;
+        --paper:#0f1215;--gridS:#24191b;--gridL:#4a2a2e;--trace:#e9f3ff;--warnbg:#2a2210}
+  *{box-sizing:border-box}
+  body{font-family:-apple-system,system-ui,"Segoe UI",Roboto,sans-serif;max-width:1400px;margin:1rem auto;padding:0 .8rem;color:var(--fg);background:var(--bg);transition:background .2s,color .2s;-webkit-text-size-adjust:100%}
+  .top{display:flex;align-items:center;justify-content:space-between;gap:.5rem}
+  h1{font-size:1.35rem;margin:0 0 .15rem}
+  .sub{color:var(--muted);font-size:.85rem;margin:0 0 .6rem}
+  h2{font-size:1rem;margin:0 0 .5rem}
+  label{display:block;font-weight:600;margin:.7rem 0 .3rem;font-size:.9rem}
+  input,select,textarea{width:100%;font-size:1rem;padding:.5rem;border:1px solid var(--border);border-radius:10px;background:var(--input);color:var(--fg);font-family:inherit}
+  textarea{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.85rem;min-height:7rem}
+  input[type=checkbox]{width:auto;margin-right:.35rem}
+  input[type=range]{padding:0}
+  button{font-size:.95rem;border:1px solid var(--border);background:var(--card);color:var(--fg);border-radius:10px;padding:.5rem .8rem;cursor:pointer;font-family:inherit}
+  button.primary{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:700}
+  button:disabled{opacity:.45;cursor:default}
+  .disclaimer{background:var(--redbg);border:2px solid var(--red);color:var(--fg);border-radius:12px;padding:.6rem .8rem;font-size:.88rem;line-height:1.35;margin:.4rem 0 .8rem}
+  .disclaimer b{color:var(--red)}
+  .layout{display:grid;grid-template-columns:minmax(0,1fr);gap:.8rem}
+  .layout>*{min-width:0}
+  @media(max-width:999px){.side,.main{display:contents}.layout{display:flex;flex-direction:column;gap:0}#loadCard{order:1}#photoCard{order:2}#interpCard{order:3}#traceCard{order:4}#beatsCard{order:5}#procCard{order:6}}
+  @media(min-width:1000px){.layout{grid-template-columns:340px minmax(0,1fr)}.side{position:sticky;top:.6rem;align-self:start;max-height:calc(100vh - 1.2rem);overflow:auto}}
+  .card{background:var(--card);border-radius:12px;padding:.8rem .9rem;margin-bottom:.8rem;position:relative;border:1px solid var(--border)}
+  .row{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap}
+  .row>*{flex:1 1 auto}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:.5rem}
+  .grid2 label{margin-top:.4rem}
+  .seg{display:flex;border:1px solid var(--border);border-radius:12px;overflow:hidden}
+  .seg button{flex:1;border:none;border-radius:0;background:transparent;font-weight:600;padding:.5rem .3rem;font-size:.88rem}
+  .seg button+button{border-left:1px solid var(--border)}
+  .seg button.on{background:var(--accent);color:#fff}
+  .tabs{display:flex;gap:.2rem;border-bottom:2px solid var(--border);margin-bottom:.6rem;overflow-x:auto;scrollbar-width:none}
+  .tabs button{flex:0 0 auto;border:none;border-radius:10px 10px 0 0;background:transparent;font-weight:600;padding:.5rem .6rem;color:var(--muted);font-size:.9rem}
+  .tabs button.on{background:var(--bg);color:var(--fg);box-shadow:inset 0 -3px 0 var(--accent)}
+  .pane{display:none}.pane.on{display:block}
+  .note{color:var(--muted);font-size:.8rem;margin-top:.3rem;line-height:1.35}
+  .badge{display:inline-block;font-size:.72rem;font-weight:700;padding:.15rem .5rem;border-radius:999px;color:#fff;vertical-align:middle;letter-spacing:.03em}
+  .b-exp{background:var(--peds)}
+  .b-good{background:#178a4c}.b-fair{background:#b07a00}.b-poor{background:#b3261e}
+  .b-scr{background:#6b7280}
+  .rhythm{font-size:1.25rem;font-weight:800;line-height:1.25;margin:.1rem 0 .4rem}
+  .metrics{display:grid;grid-template-columns:repeat(auto-fill,minmax(105px,1fr));gap:.45rem;margin:.5rem 0}
+  .m{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:.4rem .5rem}
+  .m .k{font-size:.72rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.03em}
+  .m .v{font-size:1.2rem;font-weight:800}
+  .m .u{font-size:.75rem;color:var(--muted);font-weight:600}
+  .m.alert{border-color:var(--red)}.m.alert .v{color:var(--red)}
+  ul.findings{list-style:none;padding:0;margin:.3rem 0}
+  ul.findings li{padding:.45rem .6rem;border-radius:9px;margin:.3rem 0;border-left:5px solid var(--border);background:var(--bg);font-size:.92rem;line-height:1.35}
+  ul.findings li.crit{border-left-color:var(--red)} ul.findings li.warn{border-left-color:var(--warn)} ul.findings li.ok{border-left-color:var(--ok)} ul.findings li.info{border-left-color:var(--accent)}
+  .conf{font-size:.72rem;color:var(--muted);font-weight:600;white-space:nowrap}
+  .toolbar{display:flex;gap:.35rem;flex-wrap:wrap;align-items:center;margin-bottom:.5rem}
+  .toolbar select{width:auto;font-size:.88rem;padding:.35rem}
+  .toolbar button{padding:.35rem .6rem;font-size:.88rem}
+  .toolbar .chk{font-size:.85rem;display:flex;align-items:center;white-space:nowrap;margin:0;font-weight:600}
+  .ecgwrap{position:relative;border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--paper)}
+  #ecg{display:block;width:100%;touch-action:pan-y;cursor:grab}
+  #ecg:active{cursor:grabbing}
+  .legend{display:flex;flex-wrap:wrap;gap:.6rem;font-size:.78rem;color:var(--muted);margin-top:.35rem}
+  .legend i{display:inline-block;width:12px;height:3px;vertical-align:middle;margin-right:.25rem}
+  #tacho{display:block;width:100%;height:80px;margin-top:.3rem;background:var(--bg);border:1px solid var(--border);border-radius:8px}
+  .tblwrap{overflow:auto;max-height:340px;border:1px solid var(--border);border-radius:8px}
+  table{border-collapse:collapse;width:100%;font-size:.82rem}
+  th,td{padding:.3rem .45rem;border-bottom:1px solid var(--border);text-align:right;white-space:nowrap}
+  th{position:sticky;top:0;background:var(--card);text-align:right}
+  td:first-child,th:first-child{text-align:left}
+  tr.V td{color:var(--red);font-weight:700} tr.S td{color:var(--warn);font-weight:600}
+  tr.sel td{background:var(--hl)}
+  .status{font-size:.85rem;margin-top:.5rem;min-height:1.2em}
+  .status.err{color:var(--red);font-weight:700}
+  #imgcv{width:100%;border:1px solid var(--border);border-radius:8px;touch-action:manipulation;cursor:crosshair;margin-top:.5rem}
+  .beatinfo{font-size:.82rem;color:var(--muted);margin-top:.3rem;min-height:1.1em}
+  .warnbox{background:var(--warnbg);border:1px solid var(--warn);border-radius:10px;padding:.5rem .6rem;font-size:.82rem;margin-top:.5rem}
+  footer{color:var(--muted);font-size:.78rem;margin:1rem 0 2rem;line-height:1.4}
+  a{color:var(--accent)}
+  /* ---- report ---- */
+  #reportOverlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:50;overflow:auto;padding:1rem}
+  #reportOverlay.on{display:block}
+  .reportbar{max-width:900px;margin:0 auto .5rem;display:flex;gap:.5rem;justify-content:flex-end}
+  #report{background:#fff;color:#111;max-width:900px;margin:0 auto;padding:18px 22px;border-radius:6px;font-size:12.5px;line-height:1.35}
+  #report h1{font-size:18px;margin:0}
+  #report h3{font-size:13px;margin:12px 0 4px;border-bottom:1px solid #999}
+  #report table{font-size:12px} #report th{background:#eee;color:#111} #report td,#report th{border-bottom:1px solid #ccc;color:#111}
+  #report .rdisc{border:2px solid #b3261e;padding:6px 8px;margin:8px 0;font-weight:600}
+  #report img{width:100%;display:block;margin:4px 0;border:1px solid #ddd}
+  #report .sig{display:flex;gap:30px;margin-top:16px}
+  #report .sig div{flex:1;border-top:1px solid #333;padding-top:3px;font-size:11px}
+  #report .pf{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:6px}
+  #report .pf div{border-bottom:1px solid #999;padding:10px 0 2px;font-size:11px;color:#444}
+  @page{size:A4;margin:10mm}
+  @media print{
+    body{background:#fff;max-width:none;margin:0;padding:0}
+    body>*:not(#reportOverlay){display:none!important}
+    #reportOverlay{display:block!important;position:static;background:none;padding:0;overflow:visible}
+    .reportbar{display:none}
+    #report{max-width:none;padding:0;border-radius:0}
+    #report img{break-inside:avoid}
+  }
+  @media(max-width:520px){.rhythm{font-size:1.08rem}.metrics{grid-template-columns:repeat(3,1fr)}.m .v{font-size:1.05rem}h1{font-size:1.15rem}}
+</style>
+</head>
+<body class="dark">
+<div class="top">
+  <div>
+    <h1>ECG Reader <span class="badge b-scr" style="background:var(--accent)">offline</span></h1>
+    <p class="sub" id="tkBack" style="margin:0 0 .2rem"><a href="../" style="color:var(--accent);font-weight:600">← EM Toolkit</a></p><script>try{if(window.self!==window.top)document.getElementById('tkBack').hidden=true}catch(e){}</script>
+    <p class="sub">Load an ECG → filter → Pan-Tompkins QRS → P/QRS/T delineation → intervals → rule-based draft read.</p>
+  </div>
+  <button id="themeBtn" title="Toggle dark/light" aria-label="Toggle dark/light theme">☀️</button>
+</div>
+<div class="disclaimer" id="disclaimer" role="note"><b>⚠ Automated draft – not a diagnosis.</b> Output is generated by simple rules and may be wrong (noise, lead choice, unusual morphology). Every finding must be confirmed by a clinician reviewing the original tracing and the patient. Not a medical device; no STEMI detection.</div>
+
+<div class="layout">
+<div class="side">
+  <div class="card" id="loadCard">
+    <h2>1 · Load ECG</h2>
+    <div class="tabs" id="loadTabs" role="tablist">
+      <button class="on" data-p="pSample">Samples</button><button data-p="pFile">File</button><button data-p="pPaste">Paste</button><button data-p="pPhoto">Photo <span class="badge b-exp">EXP</span></button>
+    </div>
+    <div class="pane on" id="pSample">
+      <label for="sampleSel">Demo recording</label>
+      <select id="sampleSel"></select>
+      <div class="note" id="sampleNote"></div>
+    </div>
+    <div class="pane" id="pFile">
+      <label for="fileIn">CSV / TXT / JSON, or WFDB (.hea + .dat together)</label>
+      <input type="file" id="fileIn" multiple accept=".csv,.txt,.tsv,.json,.hea,.dat,.dat16,text/plain,application/json">
+      <div class="note">CSV/TXT: one column per lead, optional header and time column. WFDB: select the <b>.hea and .dat</b> files together (formats 16, 212, 80, 61).</div>
+    </div>
+    <div class="pane" id="pPaste">
+      <label for="pasteTa">Raw samples (one per line, or comma/space separated; multi-column OK)</label>
+      <textarea id="pasteTa" placeholder="0.01&#10;0.02&#10;0.05&#10;…"></textarea>
+      <button class="primary" id="pasteBtn" style="margin-top:.5rem;width:100%">Analyze pasted data</button>
+    </div>
+    <div class="pane" id="pPhoto">
+      <div class="warnbox"><b>EXPERIMENTAL.</b> Digitizes a <b>single-lead rhythm strip</b> photo/scan by dark-pixel tracing over a red/pink grid. Works on clean, flat, straight images only. Amplitudes and intervals are approximate – rhythm/rate only.</div>
+      <label for="imgIn">Image (JPG/PNG)</label>
+      <input type="file" id="imgIn" accept="image/*">
+      <div class="grid2">
+        <div><label for="boxW">Calib. width (large boxes)</label><input id="boxW" type="number" value="5" min="1" step="1"></div>
+        <div><label for="boxH">Calib. height (large boxes)</label><input id="boxH" type="number" value="2" min="1" step="1"></div>
+      </div>
+      <label for="thrIn">Trace darkness threshold: <span id="thrVal">auto</span></label>
+      <input type="range" id="thrIn" min="0" max="200" value="0">
+      <div class="note">The image opens in the large “Photo digitizer” panel for point picking.</div>
+    </div>
+    <details style="margin-top:.6rem"><summary style="cursor:pointer;font-weight:600;font-size:.9rem">Import options</summary>
+      <div class="grid2">
+        <div><label for="fsIn">Sampling rate (Hz)</label><input id="fsIn" type="number" placeholder="auto" min="1"></div>
+        <div><label for="unitsIn">Units</label><select id="unitsIn"><option value="auto">auto</option><option value="mV">mV</option><option value="uV">µV</option><option value="V">V</option><option value="adc">ADC counts</option></select></div>
+        <div><label for="gainIn">ADC gain (counts/mV)</label><input id="gainIn" type="number" value="200"></div>
+        <div><label for="maxSecIn">Max seconds to load</label><input id="maxSecIn" type="number" value="120" min="3"></div>
+      </div>
+      <div class="note">Auto units: peak-to-peak &lt;20 → mV, &lt;20000 → µV, offset integers → ADC. Sampling rate comes from the time column, JSON <code>fs</code> or WFDB header; otherwise 250 Hz is assumed (set it here).</div>
+    </details>
+    <div class="status" id="status" aria-live="polite"></div>
+  </div>
+
+  <div class="card" id="procCard">
+    <h2>2 · Processing</h2>
+    <label>Mains notch</label>
+    <div class="seg" id="notchSeg"><button data-v="0">Off</button><button data-v="50">50 Hz</button><button data-v="60" class="on">60 Hz (PH)</button></div>
+    <div class="grid2">
+      <div><label for="baseSel">Baseline wander</label><select id="baseSel"><option value="hp">High-pass 0.5 Hz (zero-phase)</option><option value="median">Median 200/600 ms</option><option value="none">None</option></select></div>
+      <div><label for="lpSel">Low-pass</label><select id="lpSel"><option value="40">40 Hz (monitor)</option><option value="100">100 Hz</option><option value="150">150 Hz (diagnostic)</option></select></div>
+      <div><label for="leadSel">Analysis lead</label><select id="leadSel"></select></div>
+      <div><label for="sexSel">Sex (QTc limit)</label><select id="sexSel"><option value="u">Unspecified (&gt;460)</option><option value="m">Male (&gt;450)</option><option value="f">Female (&gt;470)</option></select></div>
+    </div>
+    <label class="chk" style="font-weight:600;font-size:.85rem;margin-top:.6rem"><input type="checkbox" id="globalQRS" checked> Multi-lead QRS boundaries (earliest onset / latest offset)</label>
+  </div>
+</div>
+
+<div class="main">
+  <div class="card" id="photoCard" style="display:none">
+    <h2>Photo digitizer <span class="badge b-exp">EXPERIMENTAL</span></h2>
+    <div class="note" id="photoStep">Load an image in the Photo tab to begin.</div>
+    <canvas id="imgcv" width="10" height="10"></canvas>
+    <div class="row" style="margin-top:.5rem">
+      <button id="photoReset">Reset points</button>
+      <button class="primary" id="photoGo" disabled>Digitize &amp; analyze</button>
+    </div>
+  </div>
+  <div class="card" id="interpCard">
+    <div class="row" style="justify-content:space-between;align-items:flex-start">
+      <div style="flex:1 1 60%"><div class="note" id="recInfo">No recording loaded.</div><div class="rhythm" id="rhythm">–</div></div>
+      <div style="flex:0 0 auto;text-align:right"><span class="badge" id="qBadge">–</span><div class="note" id="qNotes"></div></div>
+    </div>
+    <div class="metrics" id="metrics"></div>
+    <ul class="findings" id="findings"></ul>
+    <details id="stBox"><summary style="cursor:pointer;font-weight:600;font-size:.9rem">ST deviation at J+60 ms per lead <span class="badge b-scr">SCREENING ONLY</span></summary>
+      <div class="note">Median ST level at J+60 ms relative to the PR segment, per available lead. <b>Screening only – this is not STEMI detection</b>: no territorial/reciprocal logic, few leads, and the baseline filter can shift the ST segment. Always read a full 12-lead.</div>
+      <div class="tblwrap" style="margin-top:.4rem"><table id="stTbl"></table></div>
+    </details>
+    <div class="row" style="margin-top:.7rem">
+      <button class="primary" id="reportBtn" disabled>📄 Report (print / PDF)</button>
+      <button id="csvBtn" disabled>⬇ Beats CSV</button>
+      <button id="sigBtn" disabled>⬇ Signal CSV</button>
+    </div>
+    <div class="note">Draft generated automatically – confirm all findings clinically.</div>
+  </div>
+
+  <div class="card" id="traceCard">
+    <div class="toolbar">
+      <select id="viewLead" aria-label="Displayed lead"></select>
+      <button id="zOut" title="Zoom out">−</button><button id="zIn" title="Zoom in">+</button><button id="zFit" title="Fit whole record">Fit</button>
+      <button id="pL" title="Pan left">◀</button><button id="pR" title="Pan right">▶</button>
+      <select id="gainSel" aria-label="Gain"><option value="5">5 mm/mV</option><option value="10" selected>10 mm/mV</option><option value="20">20 mm/mV</option></select>
+      <select id="speedSel" aria-label="Paper speed"><option value="25" selected>25 mm/s</option><option value="50">50 mm/s</option></select>
+      <label class="chk"><input type="checkbox" id="showMarks" checked>Markers</label>
+      <label class="chk"><input type="checkbox" id="showRaw">Raw</label>
+    </div>
+    <div class="ecgwrap"><canvas id="ecg" height="300"></canvas></div>
+    <input type="range" id="posIn" min="0" max="1000" value="0" aria-label="Position" style="margin-top:.35rem">
+    <div class="legend">
+      <span><i style="background:#16a34a"></i>P onset/peak</span><span><i style="background:#e11d48"></i>QRS on/off</span><span>▼ R-peak (N/V/S)</span><span><i style="background:#0ea5e9"></i>T peak/end</span><span id="scaleTxt">25 mm/s · 10 mm/mV · small box 40 ms / 0.1 mV</span>
+    </div>
+    <div class="beatinfo" id="beatInfo">Drag to pan · Ctrl/⌘+wheel or pinch to zoom · tap a beat for details.</div>
+    <canvas id="tacho" height="80"></canvas>
+    <div class="note">RR tachogram (ms per beat; red = PVC-like, amber = premature narrow).</div>
+  </div>
+
+  <div class="card" id="beatsCard">
+    <h2>Beat measurements</h2>
+    <div class="tblwrap"><table id="beatTbl"></table></div>
+  </div>
+</div>
+</div>
+
+<footer>
+  <b>Methods:</b> zero-phase Butterworth/biquad filters (baseline, low-pass, 50/60 Hz notch); Pan-Tompkins QRS detection (5–15 Hz band-pass, derivative, squaring, 150 ms integration, adaptive thresholds, search-back, T-wave discrimination); slope-envelope QRS boundaries, windowed P detection with 10%-amplitude onset, tangent-method T end. QTc Bazett = QT/√RR, Fridericia = QT/∛RR. Rules are deliberately simple; see README for limitations.<br>
+  Demo data: synthetic (generated) and short excerpts from the <a href="https://physionet.org/content/mitdb/1.0.0/">MIT-BIH Arrhythmia Database</a> (Moody &amp; Mark 2001; Goldberger et al., PhysioNet, Circulation 2000), Open Data Commons Attribution License v1.0.<br>
+  Everything runs locally in your browser; no data leaves the device.
+</footer>
+
+<div id="reportOverlay" aria-hidden="true">
+  <div class="reportbar"><button class="primary" id="printBtn">🖨 Print / Save as PDF</button><button id="closeReport">Close</button></div>
+  <div id="report"></div>
+</div>
+
+<script src="samples.js"></script>
+<script src="ecg.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

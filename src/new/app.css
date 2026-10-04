@@ -77,3 +77,21 @@
   table.wide td,table.wide th{overflow-wrap:anywhere;hyphens:auto;padding:.25rem .3rem;border-bottom:1px solid var(--border);font-size:.86rem}
   input[type=datetime-local]{min-width:0;max-width:100%;box-sizing:border-box;width:100%}
   .dtrow{display:flex;gap:.4rem;align-items:center} .dtrow input{flex:1} .dtrow .linkbtn{flex:0 0 auto}
+  /* ECG reader panel (S7 › ECG reader): iframe of ecg/ that fills the content area */
+  body.ecgwide #main{max-width:none}
+  .ecgtab .ecgcard{padding:.6rem .7rem .7rem}
+  .ecgbar{display:flex;align-items:center;justify-content:space-between;gap:.5rem;flex-wrap:wrap;padding-right:2.2rem}
+  .ecgbar h2{margin:0}
+  .ecgfull{font-weight:700;font-size:.9rem;padding:.4rem .75rem;border:1px solid var(--accent);border-radius:999px;color:var(--accent);text-decoration:none;white-space:nowrap;min-height:36px;box-sizing:border-box;display:inline-flex;align-items:center}
+  .ecgfull:hover{background:var(--accent);color:#fff}
+  .ecgnote{margin:.35rem 0 .5rem}
+  .ecgprint{display:none}
+  .ecgframe{display:block;width:100%;height:calc(100vh - 12rem);height:calc(100dvh - 12rem);min-height:480px;border:1px solid var(--border);border-radius:10px;background:var(--bg)}
+  .ecglink{margin:.1rem 0 .4rem}
+  .stools{border-bottom:1px solid var(--border);padding-bottom:.2rem;margin-bottom:.2rem}
+  @media(max-width:600px){
+    .ecgtab .ecgcard{padding:.55rem 0 0;background:transparent}
+    .ecgbar{padding:0 2.2rem 0 .1rem}
+    .ecgnote{padding:0 .1rem}
+    .ecgframe{border-left:none;border-right:none;border-radius:0}
+  }

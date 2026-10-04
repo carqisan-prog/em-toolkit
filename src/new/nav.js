@@ -51,7 +51,9 @@ function navList(filter){
     let x=`<button class="sitem${on?' on':''}" data-nsec="${s.id}"${on?' aria-current="page"':''}><span class="snum">S${s.n}</span><span class="sname">${s.icon} ${esc(s.title)}</span>${badge(s.status)}</button>`;
     if(s.panels.length>1 && on) x+=`<div class="ppanel">${s.panels.map(([p,l])=>`<button data-npanel="${p}" class="${tab===p?'on':''}">${esc(l)}</button>`).join('')}</div>`;
     return x; }).join('');
-  return h || '<div class="note" style="padding:.4rem">No section matches.</div>';
+  const tool = !f || 'ecg reader ekg electrocardiogram rhythm strip tracing tools'.includes(f) || f.split(/\s+/).every(w=>'ecg reader ekg electrocardiogram rhythm strip tracing tools'.includes(w));
+  const tl = tool ? `<div class="stools"><button class="sitem${tab==='ecg'?' on':''}" data-npanel="ecg"${tab==='ecg'?' aria-current="page"':''}><span class="snum">🛠</span><span class="sname">📈 ECG reader</span><span class="sbadge built">Tool</span></button></div>` : '';
+  return (tl + h) || '<div class="note" style="padding:.4rem">No section matches.</div>';
 }
 const LEGEND = () => `<div class="legend">${badge('built')} built in this slice<br>${badge('merged')} merged from the Renal/Pulmonary build<br>${badge('v1')} cards from the original site<br>${badge('soon')} coming soon (planned topic list)<br>Map: 26 major sections of Tintinalli 9e – topic names only.</div>`;
 function refreshNav(){
@@ -69,6 +71,7 @@ function navSetTab(t, sid){
   if(t!=='stub'){ secPanel[PANEL_SEC[t]]=t; store.set(K('secPanel'),secPanel); }
   TABS.forEach(x=>{ const el=$('tab-'+x); if(el) el.hidden = x!==t; });
   if(t==='stub') renderStub();
+  ecgShow(t==='ecg' && !PRINTMODE);
   refreshNav();
 }
 function navSec(id){
@@ -245,7 +248,7 @@ function initNew(){
   document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeDrawer(); });
   document.addEventListener('click',e=>{
     const a=e.target.closest('[data-nsec]'); if(a){ navSec(a.dataset.nsec); return; }
-    const p=e.target.closest('[data-npanel]'); if(p){ setTab(p.dataset.npanel); closeDrawer(); return; }
+    const p=e.target.closest('[data-npanel]'); if(p){ e.preventDefault(); setTab(p.dataset.npanel); closeDrawer(); return; }
     const sw=e.target.closest('[data-swmode]'); if(sw){ mode=sw.dataset.swmode; store.set(K('mode'),mode); applyMode(); renderAll(); toast(`Switched to ${mode==='peds'?'Pediatric':'Adult'} mode`); return; }
     const pr=e.target.closest('[data-printp]'); if(pr){ printPanels([pr.dataset.printp]); return; }
     const al=e.target.closest('[data-algo]'); if(al){ algo=al.dataset.algo; store.set(K('algo'),algo); renderAlgo(W()); goCard('algo'); return; }
@@ -255,12 +258,41 @@ function initNew(){
   $('printSample').addEventListener('click',()=>printPanels(SAMPLE_PANELS));
   if($('printAll')) $('printAll').addEventListener('click',()=>printPanels(TABS.filter(t=>t!=='stub')));
   addSecHeads(); initSearch();
+  $('theme').addEventListener('click',()=>setTimeout(ecgSyncTheme,0));
+  if($('ecgFrame')) $('ecgFrame').addEventListener('load',ecgSyncTheme);
   initTox(); initOB(); initEndo(); initCardio(); initEnv();
 }
 function renderNew(w){
   renderPlaus(); renderPrintRev();
   renderTox(w); renderOB(w); renderEndo(w); renderCardio(w); renderEnv(w);
   renderX(w);
+}
+// ======================= ECG READER PANEL (ecg/ in an iframe, loaded on first open) =======================
+function ecgShow(on){
+  document.body.classList.toggle('ecgwide', on);
+  const f=$('ecgFrame'); if(!on || !f) return;
+  ecgSize();
+  if(document.readyState!=='loading') setTimeout(ecgScroll,0);   // user navigation (not the startup restore)
+  if(!f.getAttribute('src')){
+    try{ localStorage.setItem('ecg-theme', document.body.classList.contains('dark')?'dark':'light'); }catch(e){}
+    f.src=f.dataset.src;
+  } else ecgSyncTheme();
+}
+function ecgSize(){   // fill the viewport below the sticky emergency/nav bar once scrolled to the panel
+  const f=$('ecgFrame'), st=document.querySelector('.sticky'); if(!f || tab!=='ecg') return;
+  f.style.height = Math.max(420, window.innerHeight - (st?st.offsetHeight:0) - 10) + 'px';
+}
+function ecgScroll(){  // bring the ECG card (title + 'Open full screen') to just below the sticky bar
+  const c=document.querySelector('.ecgcard'), st=document.querySelector('.sticky'); if(!c || tab!=='ecg') return;
+  window.scrollTo({top: Math.max(0, c.getBoundingClientRect().top + window.scrollY - (st?st.offsetHeight:0) - 6)});
+}
+window.addEventListener('resize',()=>ecgSize());
+function ecgSyncTheme(){
+  const f=$('ecgFrame'); if(!f || !f.getAttribute('src')) return;
+  const dark=document.body.classList.contains('dark');
+  try{ localStorage.setItem('ecg-theme', dark?'dark':'light');
+    const d=f.contentDocument, b=d&&d.getElementById('themeBtn');
+    if(b && d.body.classList.contains('dark')!==dark) b.click(); }catch(e){}
 }
 function startupPrintParam(){
   const m=location.search.match(/[?&]print=([a-z,]+)/); if(!m) return;

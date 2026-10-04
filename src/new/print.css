@@ -1,5 +1,6 @@
   /* ===== print: current section (Ctrl+P) or the sample-section bundle (?print=…) – B/W, A4 ===== */
   @media print{
+    .ecgframe,.ecgfull,.ecglink{display:none!important} .ecgprint{display:block;font-size:8pt}
     @page{size:A4;margin:11mm 10mm 12mm}
     body,body.dark{--bg:#fff;--fg:#000;--muted:#222;--card:#fff;--border:#888;--input:#fff;--accent:#000;--warn:#000;--ok:#000;--hl:#e6e6e6;--red:#000;--redbg:#fff;--peds:#000}
     body{font-size:9pt;background:#fff;color:#000}

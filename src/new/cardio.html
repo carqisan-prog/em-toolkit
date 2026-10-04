@@ -27,7 +27,7 @@
     <h2>🫁 Acute heart failure &amp; cardiogenic shock</h2><div id="o-ahf"></div>
   </div>
   <div class="card" data-card="arrhy" data-title="Arrhythmias – brady, tachy, unstable (with ACLS algorithms &amp; code timer)" data-kw="bradycardia tachycardia SVT AF atrial fibrillation flutter VT WPW adenosine diltiazem metoprolol amiodarone cardioversion pacing heart block">
-    <h2>📈 Arrhythmias</h2><div id="o-arrhy"></div>
+    <h2>📈 Arrhythmias</h2><div class="note ecglink">Have a digital tracing or a rhythm-strip photo? <a href="#" data-goto="ecgr">📈 Open the ECG reader →</a> (automated draft read – confirm every finding)</div><div id="o-arrhy"></div>
   </div>
   <div class="card" data-card="aorta" data-title="Aortic dissection (ADD-RS) &amp; ruptured AAA" data-kw="aortic dissection ADD-RS D-dimer esmolol AAA aneurysm tearing pain">
     <h2>🩻 Aortic dissection</h2>
@@ -43,5 +43,14 @@
   <div class="card" data-card="cvsrc" data-title="Cardiovascular sources &amp; references">
     <h2>📚 Cardiovascular sources</h2>
     <div class="note">Rao et al., 2025 ACC/AHA/ACEP/NAEMSP/SCAI guideline for acute coronary syndromes · Byrne et al., 2023 ESC ACS guidelines · Thygesen et al., Fourth Universal Definition of MI 2018 · STREAM-2 (2023) · Six/Backus HEART score (2008/2013) · Whelton et al., 2017 ACC/AHA hypertension guideline · Flynn et al., AAP 2017 pediatric hypertension guideline · McDonagh et al., 2021 ESC heart failure guidelines (+2023 update) · Heidenreich et al., 2022 AHA/ACC/HFSA HF guideline · SCAI SHOCK stage classification 2019/2022 · AHA 2020 and 2025 ACLS/PALS guidelines · Joglar et al., 2023 ACC/AHA AF guideline · Isselbacher et al., 2022 ACC/AHA aortic disease guideline · Rogers et al., ADD-RS (Circulation 2011) &amp; ADvISED (2018) · Adler et al., 2015 ESC pericardial diseases guidelines and the 2025 ESC myocarditis &amp; pericarditis guidelines · Greenberg et al., AHA 2022 ICH guideline · Powers et al., AHA/ASA 2019 acute ischemic stroke. Tintinalli 9e Section 7 used only as a topic map.</div>
+  </div>
+</section>
+<!-- ============ S7 CARDIOVASCULAR: ECG READER (embedded tool, ecg/) ============ -->
+<section id="tab-ecg" class="ecgtab" hidden>
+  <div class="card ecgcard" data-card="ecgr" data-title="ECG reader (offline automated draft read: HR, rhythm, intervals, QTc)" data-kw="ECG EKG reader electrocardiogram rhythm strip tracing interpretation heart rate QRS QT QTc PR interval Pan-Tompkins atrial fibrillation PVC WFDB PhysioNet MIT-BIH CSV">
+    <div class="ecgbar"><h2>📈 ECG reader</h2><a id="ecgFull" class="ecgfull" href="ecg/" target="_blank" rel="noopener">Open full screen ↗</a></div>
+    <div class="note ecgnote"><b>Automated draft, not a diagnosis</b> – confirm every finding on the original tracing. Not a medical device; <b>does not detect STEMI</b>. Runs on this device only (no upload). Demo data: synthetic + MIT-BIH Arrhythmia Database excerpts (PhysioNet, ODC-BY 1.0).</div>
+    <div class="ecgprint">The ECG reader is an interactive tool – open <b>ecg/</b> next to this toolkit (also available as a single offline file, ecg/ecg-reader-standalone.html).</div>
+    <iframe id="ecgFrame" class="ecgframe" title="ECG reader" loading="lazy" data-src="ecg/index.html"></iframe>
   </div>
 </section>

@@ -112,5 +112,7 @@
  "intraosseous": "vascaccess",
  "post-arrest": "postarrest",
  "transcutaneous pacing": "pacing",
- "termination of resuscitation": "resethics"
+ "termination of resuscitation": "resethics",
+ "ECG reader": "ecgr",
+ "EKG": "ecgr"
 }

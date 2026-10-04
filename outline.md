@@ -2,9 +2,9 @@
 
 Topic map only. The 26 section numbers and names were checked against the publisher’s table of contents (McGraw Hill, ISBN 9781260019933). Topic names are short paraphrases at topic-name level; no chapter numbers, chapter text, tables or figures from the book are reproduced. All app content is original and cites public guidelines.
 
-**26 sections · 315 topics** — status: 🆕 Built 24, 🔀 Merged (Renal/Pulm worker) 2, ✅ v1 cards ported 0, ⬜ Coming soon 0
+**26 sections · 316 topics** — status: 🆕 Built 24, 🔀 Merged (Renal/Pulm worker) 2, ✅ v1 cards ported 0, ⬜ Coming soon 0
 
-Topic coverage: ✅ v1 28 · 🆕 new 191 · 🔀 merged 14 · ✅🆕 v1+new 23 · ✅🔀 v1+merged 2 · ⬜ 55
+Topic coverage: ✅ v1 28 · 🆕 new 192 · 🔀 merged 14 · ✅🆕 v1+new 23 · ✅🔀 v1+merged 2 · ⬜ 55
 
 **Legend:** ✅ v1 = card already on the existing site, ported · 🆕 new = built in this slice · 🔀 merged = from the Renal/Pulmonary worker (emt-renal, branch add-renal-section, read-only) · ⬜ = not built (stub with planned topics) · (app) = app addition, not a separate 9e chapter.
 
@@ -83,7 +83,7 @@ App panels: `wound` (Wound management)
 - Post-repair care & tetanus prophylaxis — 🆕 new
 
 ## S7 · ❤️ Cardiovascular Disease — 🆕 Built
-App panels: `cardio` (Cardiovascular)
+App panels: `cardio` (Cardiovascular), `ecg` (ECG reader)
 
 - Chest pain — 🆕 new
 - Acute coronary syndromes / STEMI timelines — 🆕 new
@@ -100,6 +100,7 @@ App panels: `cardio` (Cardiovascular)
 - Aneurysmal disease (AAA) — 🆕 new
 - Arterial occlusion — ⬜
 - Brady/tachy/unstable arrhythmias (app – linked to ACLS & code timer) — ✅🆕 v1+new
+- ECG reader – offline automated draft read (app) — 🆕 new
 
 ## S8 · 🌬️ Pulmonary Disorders — 🔀 Merged (Renal/Pulm worker)
 App panels: `pulm` (Pulmonary)
