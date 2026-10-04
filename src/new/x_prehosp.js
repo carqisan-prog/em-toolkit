@@ -1,0 +1,38 @@
+// ======================= S1 PREHOSPITAL CARE =======================
+// Sources: NAEMSP/ACS-COT/ACEP spinal motion restriction 2018; ACEP/NAEMSP medical oversight statements; AAMS/CAMTS air medical;
+// WHO mass gatherings 2015; PH RA 8344 as amended by RA 10932 (2017); DOH Health Care Provider Networks (UHC Act RA 11223); PH E911 (EO 56, 2018).
+Object.assign(REVIEW, {
+  'ph-ra10932': {t:'PH law: RA 8344 as amended by RA 10932 (2017) – hospitals/clinics may not demand deposits or refuse/delay emergency care; transfer only after stabilisation with documented acceptance', r:'Summary of statute for orientation only; confirm penalties/details with hospital legal office.', tab:'Prehospital'},
+  'ph-911':     {t:'PH emergency numbers: 911 (national), Philippine Red Cross 143, local LGU/DRRMO rescue lines', r:'Numbers change locally; post the verified local list.', tab:'Prehospital'},
+  'ph-air':     {t:'Air transport physiology: gas volume expands ~30% at 8,000 ft cabin altitude – drain pneumothorax before flight, fill ETT cuff with saline or monitor pressure, vent NG tube', r:'AAMS/CAMTS teaching values; aircraft and cabin pressure vary.', tab:'Prehospital'},
+  'ph-smr':     {t:'Selective spinal motion restriction (2018 consensus): long backboards are not for transport immobilisation; collar + scoop/vacuum mattress when criteria present', r:'NAEMSP/ACS-COT/ACEP 2018; local EMS protocols may still mandate boards.', tab:'Prehospital'},
+  'ph-mg':      {t:'Mass-gathering planning: typical patient presentation rate ~0.5–2 per 1,000 attendees (higher with heat, alcohol, crowd density)', r:'Observational literature; PH religious processions (e.g. Traslación) may far exceed this.', tab:'Prehospital'}
+});
+defCards('prehosp','Prehospital',[
+ {id:'ems', title:'EMS systems, medical oversight & PH emergency access', kw:'EMS ambulance 911 oversight online offline medical direction handover MIST ATMIST Red Cross 143', h:'🚑 EMS systems &amp; handover',
+  render:w=>nt(`Philippine EMS is a mix of LGU/DRRMO rescue units, private and hospital ambulances, and volunteer groups (e.g. Red Cross). Call <b>911</b> (national) or <b>143</b> (Red Cross)${vt('ph-911')}. Scope of crews varies from first aider to EMT – ask what was done.`)+
+   h3('Medical oversight')+ul(['<b>Offline</b> (indirect): written protocols, standing orders, training, quality review','<b>Online</b> (direct): real-time physician advice by radio/phone – document the name, time and orders given','The receiving physician takes over responsibility on arrival; crews may not leave until handover is complete'])+
+   h3('Structured handover (ATMIST)')+tbl(null,[['<b>A</b>ge / sex','<b>T</b>ime of onset/injury'],['<b>M</b>echanism / medical complaint','<b>I</b>njuries / findings (head to toe)'],['<b>S</b>igns: vitals, GCS, trends','<b>T</b>reatment given (drugs, doses, times)']])+
+   nt('One person talks, the team listens, then questions; hands-off for ~30 s unless critical intervention needed.')},
+ {id:'transfer', title:'Interfacility transfer & referral (PH referral networks, anti-deposit law)', kw:'transfer referral interfacility stabilize accept RA 10932 deposit hospital network One Hospital Command SBAR', h:'🔁 Interfacility transfer &amp; referral',
+  render:w=>ol([['shock','<b>Stabilise first</b> within capability: airway, breathing, hemorrhage control, IV access, glucose, analgesia; never delay life-saving care for paperwork or deposit'+vt('ph-ra10932')],
+    'Call the receiving physician: <b>SBAR</b> summary; confirm bed/specialist availability and record the name and time of acceptance. Use the DOH regional/provincial referral network or One Hospital Command centre where available',
+    'Choose escort level by risk: BLS crew vs nurse vs physician; ventilated/vasopressor patients need a physician or critical-care nurse',
+    'Send: referral letter, copies of labs/imaging (CD/phone images), medication sheet with times, consent, blood products if needed',
+    'Equipment check: O₂ for 1.5× trip duration, suction, defibrillator, drugs, spare batteries; secure ETT, lines, drains before moving'])+
+   ul(['Patient/relative informed consent for transfer; document reasons (higher level of care, no specialist, no ICU bed)','Refusal of transfer: document capacity, risks explained, alternatives offered'])},
+ {id:'airtx', title:'Air medical transport & altitude physiology', kw:'air ambulance helicopter flight altitude pneumothorax Boyle', h:'🚁 Air medical transport',
+  render:w=>nt('Air ambulance capacity in the Philippines is limited (private operators, AFP/PCG assets for disasters and islands). Consider when ground/sea transfer time is prohibitive.')+
+   ul([`Boyle's law: trapped gas expands with altitude${vt('ph-air')} → decompress pneumothorax/insert drain, vent NG tube, saline-filled ETT/Foley cuffs, check splints and casts`,
+    'Hypoxia worsens at altitude: increase FiO₂, consider pre-flight intubation in borderline airways (no room to intubate in a small cabin)',
+    'Relative contraindications: undrained pneumothorax, recent diving (decompression illness – fly low/pressurised), combative patient, uncontrolled hemorrhage needing surgery the aircraft cannot reach faster',
+    'Noise/vibration: monitor alarms invisible – rely on waveform capnography and SpO₂ displays'])},
+ {id:'massgather', title:'Mass gatherings (religious processions, concerts, sports)', kw:'mass gathering crowd event Traslacion Nazareno Sinulog procession concert crush heat', h:'🎪 Mass gatherings',
+  render:w=>nt(`PH examples: Traslación of the Black Nazarene, Sinulog, Ati-Atihan, concerts, election rallies. Expect heat illness, syncope, crush/trample injuries, minor trauma, intoxication and chronic disease exacerbations${vt('ph-mg')}.`)+
+   ul(['Planning: medical command post, mobile teams, first-aid stations within ~5 min walk, ambulance access routes, referral hospitals pre-alerted, communications','Crowd crush: compressive asphyxia – rapid extraction, high-flow O₂, treat as mass-casualty (see '+gto('mci','Disaster: triage')+')','Heat: shaded cooling areas, water, early cold-water immersion for heat stroke ('+gto('heat','Environmental: heat')+')'])},
+ {id:'smr', title:'Prehospital equipment & spinal motion restriction', kw:'spinal immobilization collar backboard tourniquet pelvic binder equipment', h:'🧰 Prehospital equipment &amp; spinal motion restriction',
+  render:w=>h3(`Selective spinal motion restriction${vt('ph-smr')}`)+ul(['Apply if blunt trauma with: altered consciousness/intoxication, midline spinal pain or tenderness, focal neuro deficit, spinal deformity, or distracting injury','Penetrating trauma alone: <b>no</b> spinal immobilisation (delays care, no benefit)','Use scoop stretcher or vacuum mattress for transfer; remove from backboard on arrival'])+
+   h3('Bleeding control')+ul(['Direct pressure → wound packing → commercial tourniquet 5–7 cm above the wound (not over a joint); note time','Suspected pelvic fracture with shock: pelvic binder centred on the greater trochanters'])+
+   h3('Minimum kit checks')+ul(['BVM sizes, OPA/NPA, suction, SGA','Glucometer, naloxone, epinephrine auto-injector/ampoules','AED/defibrillator, O₂ cylinders with reserve, length-based pediatric tape'])},
+ {id:'phsrc', title:'Prehospital sources', h:'📚 Prehospital sources', render:w=>nt('NAEMSP/ACS-COT/ACEP Spinal motion restriction position statement 2018 · NAEMSP medical oversight position statements · AAMS/CAMTS air medical accreditation standards · WHO Public health for mass gatherings 2015 · Philippine RA 8344 as amended by RA 10932 (2017) · RA 11223 Universal Health Care Act (Health Care Provider Networks) · EO 56 (2018) E911. Tintinalli 9e Section 1 used only as a topic map.')}
+]);

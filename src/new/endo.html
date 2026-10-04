@@ -1,0 +1,49 @@
+<!-- ============ S17 ENDOCRINE EMERGENCIES (sample section) ============ -->
+<section id="tab-endo" hidden>
+  <div class="card" data-card="hgcalc" data-title="DKA / HHS calculator (anion gap, corrected Na, effective osmolality)" data-kw="DKA HHS anion gap corrected sodium osmolality ketones beta-hydroxybutyrate euglycemic SGLT2">
+    <h2>🧮 Hyperglycemic crisis calculator</h2>
+    <div class="grid2">
+      <div><label for="hgGlu">Glucose</label><input id="hgGlu" type="number" inputmode="decimal" placeholder="e.g. 650"></div>
+      <div><label for="hgGluU">Unit</label><select id="hgGluU"><option value="mg">mg/dL</option><option value="mmol">mmol/L</option></select></div>
+      <div><label for="hgNa">Na (mmol/L)</label><input id="hgNa" type="number" inputmode="decimal" placeholder="e.g. 132"></div>
+      <div><label for="hgCl">Cl (mmol/L)</label><input id="hgCl" type="number" inputmode="decimal" placeholder="e.g. 98"></div>
+      <div><label for="hgHco3">HCO₃ (mmol/L)</label><input id="hgHco3" type="number" inputmode="decimal" placeholder="e.g. 12"></div>
+      <div><label for="hgPh">pH</label><input id="hgPh" type="number" inputmode="decimal" step="0.01" placeholder="e.g. 7.18"></div>
+      <div><label for="hgBhb">β-hydroxybutyrate (mmol/L)</label><input id="hgBhb" type="number" inputmode="decimal" placeholder="e.g. 4.5"></div>
+      <div><label for="hgK">K (mmol/L)</label><input id="hgK" type="number" inputmode="decimal" placeholder="e.g. 5.1"></div>
+    </div>
+    <label for="hgBun">BUN (mg/dL, optional – total osmolality)</label><input id="hgBun" type="number" inputmode="decimal" placeholder="e.g. 30">
+    <label class="chk"><input type="checkbox" data-nc="hg_dm"> Known diabetes (DKA glucose criterion met regardless of glucose)</label>
+    <div id="o-hgcalc"></div>
+  </div>
+  @@DKA@@
+  <div class="card" data-card="hhs" data-title="Hyperosmolar hyperglycemic state (HHS)" data-kw="HHS HONK hyperosmolar osmolality">
+    <h2>💧 Hyperosmolar hyperglycemic state</h2><div id="o-hhs"></div>
+  </div>
+  <div class="card" data-card="hypogly" data-title="Hypoglycemia (dextrose, glucagon, sulfonylurea)" data-kw="hypoglycaemia low sugar dextrose D50 D10 glucagon insulin overdose sulfonylurea octreotide">
+    <h2>🍭 Hypoglycemia</h2><div id="o-hypogly"></div>
+  </div>
+  <div class="card" data-card="storm" data-title="Thyroid storm (Burch–Wartofsky score, treatment)" data-kw="thyrotoxicosis thyroid storm Burch Wartofsky propranolol PTU methimazole iodine Lugol">
+    <h2>🔥 Thyroid storm</h2>
+    <div class="grid2">
+      <div><label for="bwT">Temperature</label><select id="bwT" class="sm"><option value="0">&lt; 37.2 °C (0)</option><option value="5">37.2–37.7 (5)</option><option value="10">37.8–38.2 (10)</option><option value="15">38.3–38.8 (15)</option><option value="20">38.9–39.3 (20)</option><option value="25">39.4–39.9 (25)</option><option value="30">≥ 40.0 (30)</option></select></div>
+      <div><label for="bwH">Heart rate</label><select id="bwH" class="sm"><option value="0">&lt; 90 (0)</option><option value="5">90–109 (5)</option><option value="10">110–119 (10)</option><option value="15">120–129 (15)</option><option value="20">130–139 (20)</option><option value="25">≥ 140 (25)</option></select></div>
+      <div><label for="bwC">CNS</label><select id="bwC" class="sm"><option value="0">Normal (0)</option><option value="10">Mild agitation (10)</option><option value="20">Delirium / psychosis / lethargy (20)</option><option value="30">Seizure / coma (30)</option></select></div>
+      <div><label for="bwG">GI / liver</label><select id="bwG" class="sm"><option value="0">Normal (0)</option><option value="10">Diarrhea, vomiting, abdominal pain (10)</option><option value="20">Unexplained jaundice (20)</option></select></div>
+      <div><label for="bwF">Heart failure</label><select id="bwF" class="sm"><option value="0">None (0)</option><option value="5">Mild – pedal edema (5)</option><option value="10">Moderate – basal crackles (10)</option><option value="15">Severe – pulmonary edema (15)</option></select></div>
+      <div><label for="bwA">Atrial fibrillation</label><select id="bwA" class="sm"><option value="0">Absent (0)</option><option value="10">Present (10)</option></select></div>
+    </div>
+    <label for="bwP">Precipitating event (infection, surgery, iodine, stopping antithyroid drugs, delivery…)</label><select id="bwP" class="sm"><option value="0">Absent (0)</option><option value="10">Present (10)</option></select>
+    <div id="o-storm"></div>
+  </div>
+  <div class="card" data-card="myx" data-title="Myxedema coma (severe hypothyroidism)" data-kw="hypothyroidism myxedema levothyroxine hypothermia">
+    <h2>🧊 Myxedema coma</h2><div id="o-myx"></div>
+  </div>
+  <div class="card" data-card="adrenal" data-title="Adrenal crisis (hydrocortisone stress dosing)" data-kw="adrenal insufficiency Addison crisis hydrocortisone steroid stress dose sick day">
+    <h2>⚖️ Adrenal crisis</h2><div id="o-adrenal"></div>
+  </div>
+  <div class="card" data-card="ensrc" data-title="Endocrine sources &amp; references">
+    <h2>📚 Endocrine sources</h2>
+    <div class="note">Umpierrez et al., Hyperglycemic crises in adults with diabetes – consensus report (ADA/EASD/JBDS/AACE/DTS), Diabetes Care 2024 · JBDS-IP DKA (2023) and HHS (2022) guidelines · ISPAD 2022 DKA &amp; hypoglycemia chapters · ADA Standards of Care 2025 (hypoglycemia classification) · Ross et al., ATA guidelines for hyperthyroidism and other causes of thyrotoxicosis 2016 · Burch &amp; Wartofsky 1993 (score) · Jonklaas et al., ATA guidelines for hypothyroidism 2014 (myxedema coma) · Bornstein et al., Endocrine Society primary adrenal insufficiency guideline 2016 · Endocrine Society/ESE glucocorticoid-induced adrenal insufficiency guideline 2024 · Society for Endocrinology adrenal crisis emergency guidance (2020). Tintinalli 9e Section 17 used only as a topic map.</div>
+  </div>
+</section>

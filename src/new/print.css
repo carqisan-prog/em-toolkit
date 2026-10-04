@@ -1,0 +1,44 @@
+  /* ===== print: current section (Ctrl+P) or the sample-section bundle (?print=…) – B/W, A4 ===== */
+  @media print{
+    @page{size:A4;margin:11mm 10mm 12mm}
+    body,body.dark{--bg:#fff;--fg:#000;--muted:#222;--card:#fff;--border:#888;--input:#fff;--accent:#000;--warn:#000;--ok:#000;--hl:#e6e6e6;--red:#000;--redbg:#fff;--peds:#000}
+    body{font-size:9pt;background:#fff;color:#000}
+    #app{display:block;max-width:none;padding:0}
+    #main{max-width:none;margin:0}
+    #side,#drawer,.sticky,#chips,.fav,#review,#toast,#crash,.noprint,.top,#modeSeg,.top-inputs,#wtEst,button,.subnav,.navbar,#sres{display:none!important}
+    footer{margin:.6rem 0 0;font-size:7.5pt;color:#000;column-span:all} footer p:nth-child(n+2){display:none}
+    .printhead{display:block;border-bottom:2px solid #000;margin:0 0 .3rem;padding-bottom:.15rem;column-span:all}
+    .printhead h1{font-size:13pt;margin:0}
+    .printhead .note{font-size:7.6pt;margin:.1rem 0 0}
+    .printrev{display:block;column-span:all;border-top:2px solid #000;margin-top:.4rem;padding-top:.2rem}
+    .printrev h3{font-size:9.5pt;margin:.1rem 0 .15rem}
+    .printrev .rev{font-size:7pt;padding:.05rem 0;break-inside:avoid;border-top:none}
+    .printrev .rev .note{font-size:6.8pt;margin:0}
+    section:not([hidden]){column-count:2;column-gap:5mm}
+    section.pbreak{break-before:page}
+    .sechead{column-span:all;margin:0 0 .2rem} .sechead h2{font-size:11pt}
+    section > .note{column-span:all}
+    .card{display:block;background:#fff;border:1px solid #777;border-radius:5px;padding:.3rem .45rem;margin:0 0 .3rem;break-inside:auto}
+    .card h2{font-size:9.6pt;margin:0 0 .15rem;padding-right:0;break-after:avoid}
+    .card .grid2,.card label:not(.chk),.card input:not([type=checkbox]),.card select,.card .row:not(.keep){display:none!important}
+    .drug,.cline,tr,.steps li,ul.tight li,.chk,.flag,.kv{break-inside:avoid}
+    .note,ul.tight,.steps li,table,.flag,.kv{font-size:7.6pt}
+    .note{margin-top:.1rem}
+    .big{font-size:9.5pt} .total{font-size:11pt} .dn{font-size:8.4pt} .cline b{font-size:8.4pt}
+    .steps li{background:#fff;border-left:2px solid #000;padding:.12rem .3rem .12rem 1.5rem;margin:.12rem 0}
+    .steps li::before{background:#000!important;color:#fff!important;width:.95rem;height:.95rem;font-size:6.5pt;top:.12rem;left:.25rem;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .steps li.shock{border-left:4px double #000}
+    ul.tight{line-height:1.25;padding-left:.9rem}
+    th,td{border-bottom:1px solid #999;padding:.08rem .2rem}
+    tr.sel td{background:#e6e6e6;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .vtag{background:#fff!important;color:#000!important;border:1px solid #000;font-size:5.8pt;padding:0 .15rem;margin-left:.2rem}
+    .due,.soon,.okc,.vwarn{color:#000} .due{text-decoration:underline}
+    .flag{background:#fff;border:1px solid #000;border-left:3px solid #000}
+    .flag b{color:#000}
+    .sbadge,.cov{border:1px solid #000;background:#fff!important;color:#000!important}
+    a{color:#000!important;text-decoration:none}
+    .chk{margin-top:.05rem;font-size:7.6pt} .chk input{transform:none;margin-top:.05rem}
+    .drug{padding-top:.2rem;margin-top:.25rem}
+    .twocol{display:block}
+    ::placeholder{color:transparent}
+  }

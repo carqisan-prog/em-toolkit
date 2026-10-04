@@ -1,0 +1,47 @@
+<!-- ============ S7 CARDIOVASCULAR DISEASE (sample section) ============ -->
+<section id="tab-cardio" hidden>
+  <div class="card" data-card="acs" data-title="STEMI / ACS – reperfusion timeline &amp; antithrombotics" data-kw="STEMI NSTEMI MI myocardial infarction chest pain PCI cath lab door to balloon aspirin ticagrelor clopidogrel heparin enoxaparin nitroglycerin Sgarbossa posterior de Winter">
+    <h2>🫀 ACS / STEMI timeline</h2>
+    <label for="stOnset">Symptom onset</label><div class="dtrow"><input id="stOnset" type="datetime-local"><button class="linkbtn" data-now="stOnset" type="button">Now</button></div>
+    <label for="stFmc">First medical contact / door</label><div class="dtrow"><input id="stFmc" type="datetime-local"><button class="linkbtn" data-now="stFmc" type="button">Now</button></div>
+    <label for="stPci">PCI access</label><select id="stPci"><option value="onsite">PCI-capable hospital (on site)</option><option value="transfer">Non-PCI hospital – transfer possible</option><option value="none">No timely PCI available</option></select>
+    <div id="o-acs"></div>
+  </div>
+  <div class="card" data-card="lysis" data-title="STEMI fibrinolysis (tenecteplase weight bands, alteplase, streptokinase, contraindications)" data-kw="thrombolysis TNK tenecteplase alteplase streptokinase fibrinolytic contraindications">
+    <h2>💉 STEMI fibrinolysis</h2><div id="o-lysis"></div>
+  </div>
+  <div class="card" data-card="heart" data-title="HEART score (undifferentiated chest pain)" data-kw="HEART score chest pain risk troponin discharge MACE">
+    <h2>📊 HEART score</h2>
+    <div class="grid2">
+      <div><label for="heartH">History</label><select id="heartH" class="sm"><option value="0">Slightly suspicious (0)</option><option value="1">Moderately suspicious (1)</option><option value="2">Highly suspicious (2)</option></select></div>
+      <div><label for="heartE">ECG</label><select id="heartE" class="sm"><option value="0">Normal (0)</option><option value="1">Non-specific repolarisation (1)</option><option value="2">Significant ST deviation (2)</option></select></div>
+      <div><label for="heartR">Risk factors</label><select id="heartR" class="sm"><option value="0">None known (0)</option><option value="1">1–2 (1)</option><option value="2">≥ 3 or known atherosclerosis (2)</option></select></div>
+      <div><label for="heartT">Initial troponin</label><select id="heartT" class="sm"><option value="0">≤ normal limit (0)</option><option value="1">1–3× limit (1)</option><option value="2">&gt; 3× limit (2)</option></select></div>
+    </div>
+    <div id="o-heart"></div>
+  </div>
+  <div class="card" data-card="cvhtn" data-title="Hypertensive emergency – targets by condition &amp; IV agents" data-kw="hypertension hypertensive emergency urgency labetalol nicardipine esmolol nitroglycerin nitroprusside hydralazine phentolamine BP target">
+    <h2>🩸 Hypertensive emergencies</h2><div id="o-cvhtn"></div>
+  </div>
+  <div class="card" data-card="ahf" data-title="Acute heart failure, SCAPE &amp; cardiogenic shock" data-kw="heart failure pulmonary edema SCAPE nitroglycerin furosemide NIV CPAP cardiogenic shock dobutamine norepinephrine SCAI">
+    <h2>🫁 Acute heart failure &amp; cardiogenic shock</h2><div id="o-ahf"></div>
+  </div>
+  <div class="card" data-card="arrhy" data-title="Arrhythmias – brady, tachy, unstable (with ACLS algorithms &amp; code timer)" data-kw="bradycardia tachycardia SVT AF atrial fibrillation flutter VT WPW adenosine diltiazem metoprolol amiodarone cardioversion pacing heart block">
+    <h2>📈 Arrhythmias</h2><div id="o-arrhy"></div>
+  </div>
+  <div class="card" data-card="aorta" data-title="Aortic dissection (ADD-RS) &amp; ruptured AAA" data-kw="aortic dissection ADD-RS D-dimer esmolol AAA aneurysm tearing pain">
+    <h2>🩻 Aortic dissection</h2>
+    <label class="chk"><input type="checkbox" data-nc="ad_cond"> <span><b>High-risk condition:</b> Marfan / connective tissue disease, family history of aortic disease, known aortic valve disease or aneurysm, recent aortic manipulation</span></label>
+    <label class="chk"><input type="checkbox" data-nc="ad_pain"> <span><b>High-risk pain:</b> abrupt onset, severe, ripping/tearing (chest, back or abdomen)</span></label>
+    <label class="chk"><input type="checkbox" data-nc="ad_exam"> <span><b>High-risk exam:</b> pulse deficit, SBP differential &gt; 20 mmHg, focal neuro deficit + pain, new aortic regurgitation murmur + pain, hypotension/shock</span></label>
+    <label for="adDd">D-dimer</label><select id="adDd"><option value="">Not done</option><option value="neg">&lt; 500 ng/mL FEU</option><option value="pos">≥ 500 ng/mL FEU</option></select>
+    <div id="o-aorta"></div>
+  </div>
+  <div class="card" data-card="peri" data-title="Pericarditis, myocarditis &amp; tamponade red flags" data-kw="pericarditis myocarditis tamponade colchicine NSAID pericardiocentesis effusion Beck">
+    <h2>💔 Pericarditis, myocarditis, tamponade</h2><div id="o-peri"></div>
+  </div>
+  <div class="card" data-card="cvsrc" data-title="Cardiovascular sources &amp; references">
+    <h2>📚 Cardiovascular sources</h2>
+    <div class="note">Rao et al., 2025 ACC/AHA/ACEP/NAEMSP/SCAI guideline for acute coronary syndromes · Byrne et al., 2023 ESC ACS guidelines · Thygesen et al., Fourth Universal Definition of MI 2018 · STREAM-2 (2023) · Six/Backus HEART score (2008/2013) · Whelton et al., 2017 ACC/AHA hypertension guideline · Flynn et al., AAP 2017 pediatric hypertension guideline · McDonagh et al., 2021 ESC heart failure guidelines (+2023 update) · Heidenreich et al., 2022 AHA/ACC/HFSA HF guideline · SCAI SHOCK stage classification 2019/2022 · AHA 2020 and 2025 ACLS/PALS guidelines · Joglar et al., 2023 ACC/AHA AF guideline · Isselbacher et al., 2022 ACC/AHA aortic disease guideline · Rogers et al., ADD-RS (Circulation 2011) &amp; ADvISED (2018) · Adler et al., 2015 ESC pericardial diseases guidelines and the 2025 ESC myocarditis &amp; pericarditis guidelines · Greenberg et al., AHA 2022 ICH guideline · Powers et al., AHA/ASA 2019 acute ischemic stroke. Tintinalli 9e Section 7 used only as a topic map.</div>
+  </div>
+</section>
