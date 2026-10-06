@@ -40,6 +40,46 @@ const FGROUPS = {
     ['travel_mal','Travel to malaria area (e.g. Palawan forest)'],['tb_contact','TB contact'],['unsafe_food','Street food / unsafe water'],
     ['dengue_area','Dengue cases in household / barangay'],['dirty_wound','Dirty / puncture wound'],['missed_insulin','Missed insulin / DM meds'],
     ['infection_sx','Recent infection / illness']]},
+  // ---- Trauma mode (ATLS xABCDE primary survey + secondary survey by region) ----
+  'tr_mech': {t:'Mechanism', sec:'tr', f:[
+    ['mech_mvc','Car / jeepney / bus crash (MVC)'],['mech_moto','Motorcycle / tricycle crash'],['no_helmet','No helmet (rider)'],
+    ['mech_ped','Pedestrian struck / run over (nasagasaan)'],['mech_hienergy','High energy: high speed, rollover, ejection, death in same vehicle'],
+    ['mech_fall','Fall from height'],['mech_fall_low','Ground-level fall / slip (nadulas, natumba)'],['mech_axial','Axial load / diving into shallow water'],
+    ['mech_assault','Assault / blunt blow (binugbog)'],['mech_stab','Stab wound (sinaksak)'],['mech_gsw','Gunshot wound (binaril)'],
+    ['mech_burn','Burn – flame / scald / contact'],['burn_elec','Electrical / lightning injury'],['burn_enclosed','Fire in enclosed space / smoke exposure'],
+    ['mech_crush','Crush / entrapment (naipit, nadaganan)'],['mech_drown','Drowning / submersion (nalunod)'],['head_inj','Head struck / head injury'],
+    ['loc','Loss of consciousness'],['intox','Intoxicated now (alcohol / drugs)']]},
+  'tr_x':    {t:'x – Exsanguinating external hemorrhage', sec:'tr', f:[['ext_hemorrhage','Catastrophic external bleeding']]},
+  'tr_a':    {t:'A – Airway (with C-spine protection)', sec:'tr', f:[['face_burn','Facial burns / singed hair / soot / carbonaceous sputum'],['voice_change','Hoarse voice / voice change'],['airway_blood','Blood / vomitus / teeth in airway']]},
+  'tr_b':    {t:'B – Breathing', sec:'tr', f:[['flail_seg','Paradoxical (flail) chest segment'],['open_chest','Open (sucking) chest wound'],['chest_wall','Chest wall tenderness / crepitus / rib fractures'],['subq_emph','Subcutaneous emphysema']]},
+  'tr_c':    {t:'C – Circulation', sec:'tr', f:[['pelvic_unstable','Pelvic instability / pain on gentle compression (do not rock)']]},
+  'tr_fast': {t:'eFAST', sec:'tr', f:[['fast_neg','eFAST negative'],['fast_abd','Free fluid – abdomen / pelvis'],['fast_peri','Pericardial fluid'],['fast_ptx','No lung sliding (pneumothorax)'],['fast_htx','Pleural fluid (hemothorax)']]},
+  'tr_d':    {t:'D – Disability', sec:'tr', f:[['lateralizing','Lateralizing signs (one-sided weakness / posturing)'],['cord_deficit','Spinal cord deficit (weakness / sensory level / priapism)']]},
+  'tr_e':    {t:'E – Exposure / burns', sec:'tr', f:[['burn_full','Full-thickness burn'],['burn_circ','Circumferential burn (limb / chest)'],['burn_special','Burn to face, hands, feet, genitalia, perineum or major joints']]},
+  'tr_head': {t:'Head / face', sec:'tr', f:[
+    ['scalp_hematoma','Scalp hematoma / laceration'],['basilar','Basal skull fracture signs (raccoon eyes, Battle sign, hemotympanum, CSF leak)'],['skull_fx','Open / depressed / palpable skull fracture'],
+    ['lucid','Lucid interval, then deterioration'],['amnesia','Amnesia ≥ 30 min before impact'],['vomit2','Vomiting ≥ 2 times after injury'],['sev_headache','Severe headache'],
+    ['post_seizure','Seizure after injury'],['not_normal','Child not acting normally (per parent)'],['face_fx','Facial fracture (midface instability, malocclusion, deformity)']]},
+  'tr_neck': {t:'Neck', sec:'tr', f:[
+    ['neck_midline','Midline C-spine tenderness'],['neck_pain','Neck pain'],['paresthesia','Paresthesias in hands / feet'],['distract','Painful distracting injury'],
+    ['cs_simple','Simple rear-end MVC'],['cs_amb','Ambulatory at any time / sitting up in ED'],['cs_delayed','Delayed onset of neck pain'],['cs_rotate','Can actively rotate neck 45° left and right'],
+    ['neck_pen','Neck wound breaching platysma'],['neck_hard','Hard sign: expanding / pulsatile hematoma, bruit / thrill, active bleeding, air bubbling'],['dysphagia','Dysphagia / hoarseness / hemoptysis after neck injury']]},
+  'tr_chest':{t:'Chest', sec:'tr', f:[
+    ['chest_pen','Penetrating chest wound'],['box_wound','Wound in the "cardiac box" (between nipples, clavicles to costal margin)'],['seatbelt','Seat-belt sign (chest / abdomen)'],
+    ['sternal','Sternal tenderness / fracture'],['first_rib','1st–2nd rib or scapular fracture'],['cxr_htx','CXR / US: hemothorax'],['tube_1500','Chest tube ≥ 1500 mL at once or > 200 mL/h']]},
+  'tr_abd':  {t:'Abdomen / pelvis / perineum', sec:'tr', f:[
+    ['abd_tender_tr','Abdominal tenderness / guarding'],['luq_tender','LUQ / left lower rib tenderness or left shoulder (Kehr) pain'],['ruq_tender_tr','RUQ / right lower rib tenderness'],
+    ['abd_pen','Penetrating abdominal / flank / back wound'],['evisceration','Evisceration'],['flank_ecchy','Flank ecchymosis / flank pain'],['pelvic_pain','Pelvic / hip pain'],
+    ['blood_meatus','Blood at urethral meatus'],['perineal','Perineal / scrotal ("butterfly") hematoma'],['high_prostate','High-riding prostate / vaginal laceration'],['unable_void','Unable to void']]},
+  'tr_spine':{t:'Spine / cord pattern', sec:'tr', f:[
+    ['tl_tender','Thoracolumbar midline tenderness / step-off'],['arms_weak','Arms weaker than legs (central cord pattern)'],['bs_pattern','One-sided weakness + opposite pain/temperature loss (Brown-Séquard)'],
+    ['ant_cord','Motor + pain/temperature loss, position sense spared (anterior cord)'],['saddle','Saddle anesthesia / sphincter loss']]},
+  'tr_ext':  {t:'Extremities / soft tissue', sec:'tr', f:[
+    ['long_bone','Long-bone deformity / suspected fracture'],['femur_fx','Femur fracture (one or both)'],['open_fx','Wound over fracture / bone exposed'],
+    ['hard_vasc','Hard signs: pulsatile bleeding, expanding hematoma, absent distal pulse, bruit / thrill'],['soft_vasc','Soft signs: weak pulse, ABI < 0.9, small stable hematoma, wound near vessel'],
+    ['comp_pain','Pain out of proportion / pain on passive stretch'],['comp_tense','Tense, swollen compartment'],['crush_long','Limb crushed / entrapped ≥ 1 h'],
+    ['dark_urine','Dark / cola-coloured urine'],['contaminated','Heavily contaminated wound (soil, farm, floodwater)']]},
+  'tr_preg': {t:'Pregnancy (if pregnant)', sec:'tr', f:[['uterine_tender','Uterine tenderness / contractions / rigid uterus'],['fhr_abn','Abnormal / absent fetal heart rate'],['rom','Leaking amniotic fluid']]},
   // ---- PMH / risk factors ----
   'pmh':     {t:'PMH / risk factors', sec:'pmh', f:[
     ['htn','Hypertension'],['dm','Diabetes'],['dm1','Type 1 DM'],['smoker','Smoker'],['dyslipid','Dyslipidemia'],['obesity','Obesity'],
@@ -101,7 +141,12 @@ Object.assign(FLABEL, {
   wbc_vhigh:'WBC > 15k', neut_high:'Neutrophils > 75 %', urea_high:'Urea > 7 mmol/L (BUN > 19)', lactate_high:'Lactate ≥ 2', lactate_4:'Lactate ≥ 4',
   age_ge50:'Age ≥ 50', age_ge65:'Age ≥ 65', age_lt40:'Age < 40', age_lt16:'Age < 16', male:'Male', female:'Female', repro_f:'Female 12–50 y', pregnant:'Pregnant',
   onset_sudden:'Sudden onset (seconds–minutes)', dur_lt24h:'Duration < 24 h', dur_le7d:'Duration ≤ 7 d', dur_gt7d:'Duration > 7 d', dur_ge14d:'Duration ≥ 14 d',
-  fever_d3_7:'Fever day 3–7 (critical phase window)', fever_any:'Fever (history or measured)'
+  fever_d3_7:'Fever day 3–7 (critical phase window)', fever_any:'Fever (history or measured)',
+  // trauma-derived
+  trauma:'Trauma / injury', penetrating:'Penetrating mechanism', blunt:'Blunt mechanism', fall_ge1m:'Fall ≥ 1 m / 5 stairs', fall_ge3m:'Fall ≥ 3 m (≈ 1 storey)',
+  air_threat:'Airway threatened', air_obst:'Airway obstructed', dec_bs_bil:'↓ Breath sounds both sides', pupil_uni:'Unilateral dilated / unreactive pupil', pupil_bil:'Both pupils fixed & dilated',
+  gcs_9_12:'GCS 9–12 (moderate TBI)', gcs_13_15:'GCS 13–15', gcs_lt13:'GCS < 13', t_lt35:'T < 35 °C (hypothermia)', sbp_lt110:'SBP < 110', hr_ge120:'HR ≥ 120',
+  inj_le3h:'Injury ≤ 3 h ago', inj_gt3h:'Injury > 3 h ago', tbsa_ge10:'Burn ≥ 10 % TBSA', tbsa_ge20:'Burn ≥ 20 % TBSA', bd_ge6:'Base deficit ≥ 6', helmet:'Helmet worn'
 });
 
 // ---------------- Free-text lexicon ----------------
@@ -206,6 +251,47 @@ const LEX = [
   ['may dengue sa bahay|kapitbahay.{0,15}dengue|dengue (cases|outbreak)', ['dengue_area']],
   ['natusok ng pako|kalawang|rusty nail|puncture wound', ['dirty_wound']],
   ['hindi nag-?insulin|missed insulin|ran out of insulin|stopped (insulin|meds)', ['missed_insulin']],
+  // trauma (English / Tagalog / Taglish)
+  ['naaksidente\\w*|aksidente|(?<!vascular )accident|(?<!(kidney|liver|lung|renal|needle-?stick) )injur(y|ed)|trauma|nasugatan|sugatan|nadisgrasya|disgrasya', ['trauma']],
+  ['nabangga|bumangga|binangga|nabanggaan|banggaan|car crash|vehicular|mvc|motor vehicle (crash|collision|accident)|road crash|road traffic|tumaob|bumaligtad', ['mech_mvc','trauma']],
+  ['motor(?! ?(weakness|deficit|function|exam|power|vehicle|strength))|motorsiklo|motorcycle|motorbike|naka-?motor|habal-?habal|tricycle|traysikel|scooter|angkas|rider', ['mech_moto','trauma']],
+  ['walang helmet|walang suot na helmet|hindi naka-?helmet|no helmet|without (a )?helmet|unhelmeted', ['no_helmet','mech_moto','trauma']],
+  ['naka-?helmet|may helmet|with (a )?helmet|helmeted|wearing (a )?helmet', ['helmet']],
+  ['nasagasaan|sinagasaan|nabundol|binundol|pedestrian|struck by (a )?(car|vehicle|jeep\\w*|bus|truck|tricycle|motorcycle)|hit by (a )?(car|vehicle|jeep\\w*|bus|truck|tricycle|motorcycle)', ['mech_ped','trauma']],
+  ['tumilapon|ejected|ejection|rollover|high[- ]speed|mabilis ang takbo|may namatay', ['mech_hienergy','trauma']],
+  ['nahulog|nalaglag|fell from|fall from|fallen from|nahulog mula|bumagsak mula', ['mech_fall','trauma']],
+  ['nadulas|natumba|napatid|slipped|tripped|ground[- ]level fall|fell (at home|in the bathroom|from standing)', ['mech_fall_low','trauma']],
+  ['puno ng niyog|niyog|coconut tree|bubong|roof|scaffold\\w*|ikalawang palapag|2nd floor|second floor|3rd floor|third floor|construction site', ['mech_fall','fall_ge3m','trauma']],
+  ['diving|nag-?dive|tumalon sa (ilog|dagat|pool)', ['mech_axial','trauma']],
+  ['sinuntok|binugbog|bugbog|pinalo|hinampas|sinipa|pinagtulungan|assault\\w*|mauled|beaten|rumble', ['mech_assault','trauma']],
+  ['sinaksak|nasaksak|saksak|tinaga|stab(bed)?|stab wounds?|knife|kutsilyo|patalim|balisong|ice ?pick|machete|itak|bolo', ['mech_stab','penetrating','trauma']],
+  ['binaril|nabaril|baril|tama ng bala|bala|gunshot|gsw|was shot|got shot|shot (in|at) the|bullet', ['mech_gsw','penetrating','trauma']],
+  ['napaso|nasunog|nalapnos|paso|sunog|burns?|burned|burnt|scald\\w*|flame|kumukulong tubig|mantika|lpg|sumabog|explosion', ['mech_burn','trauma']],
+  ['nakuryente|kinuryente|electrocut\\w*|electrical injury|kidlat|lightning|high[- ]voltage', ['burn_elec','mech_burn','trauma']],
+  ['usok|smoke inhalation|nakalanghap ng usok|enclosed space|sa loob ng bahay na nasusunog', ['burn_enclosed']],
+  ['naipit|nadaganan|nabagsakan|nabagsak(an)? ng|gumuho|crush(ed)? (injury|by|under)|crush injury|crushed|entrap\\w*|pinned (under|by)|trapped under', ['mech_crush','trauma']],
+  ['nalunod|nalulunod|nalubog|drown\\w*|submersion|submerged', ['mech_drown','trauma']],
+  ['basag ang ulo|putok ang ulo|pumutok ang ulo|bukol sa ulo|nauntog|untog|tumama ang ulo|head (injury|trauma|wound)|hit (his|her|the) head|struck (his|her|the) head', ['head_inj','trauma']],
+  ['nawalan ng ulirat|loss of consciousness|\\bloc\\b|knocked out|unconscious', ['loc']],
+  ['nakainom|amoy alak|lasing na lasing|intoxicated|drunk', ['intox']],
+  ['nagising (tapos|pero)|nakausap pa|lucid interval|talked and deteriorated', ['lucid']],
+  ['bukol sa (gilid|likod) ng ulo|scalp hematoma', ['scalp_hematoma']],
+  ['raccoon eyes|battle.?s sign|hemotympanum|csf (leak|rhinorrh\\w*|otorrh\\w*)|tumutulo ang tubig sa ilong', ['basilar']],
+  ['masakit ang batok|masakit ang leeg|neck pain', ['neck_pain']],
+  ['manhid|namamanhid|tingling|paresthesia\\w*', ['paresthesia']],
+  ['hindi maigalaw ang (dalawang )?(paa|binti)|paralyzed|paraplegi\\w*|quadripleg\\w*|tetrapleg\\w*|walang pakiramdam sa (paa|binti)', ['cord_deficit']],
+  ['balakang|pelvic (pain|fracture)|hip pain', ['pelvic_pain']],
+  ['kaliwang balikat|left shoulder (tip )?pain|kehr', ['luq_tender']],
+  ['dumudugo nang malakas|malakas ang pagdurugo|maraming dugo|duguan|bumubulwak|sumisirit ang dugo|active bleeding|profuse bleeding|spurting|arterial bleeding', ['ext_hemorrhage']],
+  ['bali|nabali|baling|fracture[ds]?|deformity|deformed', ['long_bone']],
+  ['lumabas ang buto|nakalabas ang buto|bone (exposed|sticking out)|open fracture|compound fracture', ['open_fx','long_bone']],
+  ['femur fracture|fractured femur|bali sa hita|baling hita', ['femur_fx']],
+  ['hindi makaihi|unable to void|cannot void|urinary retention', ['unable_void']],
+  ['kulay coke ang ihi|cola-colou?red urine|dark urine|maitim na ihi', ['dark_urine']],
+  ['blood thinner|pampalabnaw ng dugo|warfarin|apixaban|rivaroxaban|dabigatran|edoxaban|anticoagula\\w*', ['m_anticoag']],
+  ['clopidogrel|aspirin|antiplatelet', ['m_antiplt']],
+  ['paos|namamaos|hoarse voice|voice change|singed|carbonaceous|uling sa ilong', ['voice_change']],
+  ['hindi gumagalaw ang baby|walang heartbeat ang baby|fetal (distress|bradycardia)', ['fhr_abn']],
   // PMH
   ['high blood|altapresyon|hypertensi\\w*|\\bhtn\\b', ['htn']],
   ['diabet\\w*|\\bdm\\b|mataas ang asukal|may sugar', ['dm']],

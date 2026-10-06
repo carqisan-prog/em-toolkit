@@ -8,7 +8,7 @@
 <meta name="theme-color" content="#0d0f12">
 <link rel="icon" href="data:,">
 <title>DDx Assist – ED differential diagnosis support (offline)</title>
-<meta name="description" content="Offline, rule-based emergency department differential diagnosis, diagnostics and treatment support. Tintinalli 9e section-mapped, Philippine CPG-first. Decision support only – not a diagnosis.">
+<meta name="description" content="Offline, rule-based emergency department differential diagnosis, diagnostics and treatment support, with an ATLS-based trauma mode. Tintinalli 9e section-mapped, Philippine CPG-first. Decision support only – not a diagnosis.">
 <style>
 /* DDx Assist – styles matched to EM Toolkit (same CSS variables, dark/light via body.dark) */
 :root{--bg:#fff;--fg:#1a1a1a;--muted:#555;--card:#f4f7fb;--border:#ccc;--input:#fff;--accent:#0a66c2;--warn:#8a5a00;--ok:#0b5;--hl:#ffe9a8;--red:#c0392b;--redbg:#fdecea;--peds:#7b3fb5}
@@ -125,6 +125,30 @@ footer{color:var(--muted);font-size:.76rem;margin-top:1.4rem;line-height:1.4}
 
 .grid3.durrow{grid-template-columns:1fr 1.5fr .9fr}
 
+/* trauma mode */
+.trm.on{background:var(--red);color:#fff;border-color:var(--red);font-weight:700}
+#sec-tr{border:2px solid var(--red)}
+#sec-tr>summary{color:var(--red)}
+.psb{border:1px solid var(--border);border-radius:10px;padding:.45rem .6rem;margin-top:.45rem;background:var(--bg)}
+.psh{font-weight:700;font-size:.88rem;display:flex;align-items:center;gap:.45rem}
+.pk{display:inline-flex;align-items:center;justify-content:center;min-width:1.6rem;height:1.6rem;border-radius:8px;background:var(--red);color:#fff;font-weight:800;font-size:.9rem;flex:0 0 auto}
+.psb .chips{margin-top:.35rem}
+.gl.sm{margin-top:.4rem;font-size:.74rem}
+.gcst{padding:.5rem;border:1px dashed var(--border);border-radius:10px;font-weight:700;font-variant-numeric:tabular-nums;min-height:2.4rem}
+.chip.lk{border-style:dashed}
+details.sub{border:1px solid var(--border);border-radius:10px;padding:.4rem .6rem;margin-top:.4rem;background:var(--bg)}
+details.sub>summary{cursor:pointer;font-weight:700;font-size:.86rem;display:flex;align-items:center;gap:.4rem}
+details.sub .chips{margin-top:.35rem}
+.psf{border:2px solid var(--red);border-radius:12px;padding:.55rem .7rem;margin-top:.4rem;background:var(--redbg)}
+#results .psf h2{margin:.1rem 0 .2rem;color:var(--red);flex-wrap:wrap}
+.pn{font-size:.75rem;background:var(--red);color:#fff;border-radius:999px;padding:.05rem .5rem}
+.psr{display:flex;gap:.5rem;align-items:flex-start;padding:.4rem .5rem;margin-top:.35rem;border-radius:9px;background:var(--card);font-size:.85rem;border-left:4px solid var(--border)}
+.psr.threat{border-left-color:var(--red)} .psr.threat b{color:var(--red)}
+.psr.ok{border-left-color:var(--ok)} .psr.ok .pk{background:var(--ok)}
+.psr.unk .pk{background:var(--muted)}
+.psr.tc .pk{background:var(--accent)}
+.psl{font-size:.76rem;color:var(--accent);white-space:nowrap}
+
 </style>
 </head>
 <body class="dark">
@@ -136,6 +160,7 @@ footer{color:var(--muted);font-size:.76rem;margin-top:1.4rem;line-height:1.4}
   <div class="disc" role="note" id="disclaimer"><b>⚠ Decision support only – NOT a diagnosis.</b> Output is a transparent, rule-based list of possibilities to consider. Your clinical judgment overrides it. Every dose is marked <span class="vtag">⚠ VERIFY</span> – check against current references and local protocols. Runs entirely on this device: no network, no storage of patient data.</div>
   <div class="toolbar">
     <select id="example" aria-label="Load example case"><option value="">📋 Load example case…</option></select>
+    <button id="trMode" class="trm" type="button" aria-pressed="false" title="Trauma mode: ATLS primary survey first, trauma differential, trauma rules">🩻 Trauma</button>
     <button id="clear" title="Clear all inputs">Clear</button>
     <button id="jump" title="Jump to results">Results ↓</button>
   </div>
@@ -144,7 +169,7 @@ footer{color:var(--muted);font-size:.76rem;margin-top:1.4rem;line-height:1.4}
     <aside id="results" aria-live="polite"></aside>
   </div>
   <footer>
-    DDx Assist v1.0 · knowledge base: <span id="kbcount"></span> conditions organised by Tintinalli’s Emergency Medicine 9e <i>section/topic map only</i> (no book text reproduced). Diagnostics/treatment prefer Philippine CPGs where they exist; otherwise international guidelines (labelled “intl”). Weights are expert-estimated, not validated. Not a medical device. Companion to the <a href="https://carqisan-prog.github.io/em-toolkit/" rel="noopener noreferrer" target="_blank" style="color:var(--accent)">EM Toolkit</a>.
+    DDx Assist v1.1 (trauma mode) · knowledge base: <span id="kbcount"></span> conditions organised by Tintinalli’s Emergency Medicine 9e <i>section/topic map only</i> (no book text reproduced). Diagnostics/treatment prefer Philippine CPGs where they exist; otherwise international guidelines (labelled “intl”). Weights are expert-estimated, not validated. Not a medical device. Companion to the <a href="https://carqisan-prog.github.io/em-toolkit/" rel="noopener noreferrer" target="_blank" style="color:var(--accent)">EM Toolkit</a>.
   </footer>
 </div>
 <pre id="printnote"></pre>
@@ -193,6 +218,46 @@ const FGROUPS = {
     ['travel_mal','Travel to malaria area (e.g. Palawan forest)'],['tb_contact','TB contact'],['unsafe_food','Street food / unsafe water'],
     ['dengue_area','Dengue cases in household / barangay'],['dirty_wound','Dirty / puncture wound'],['missed_insulin','Missed insulin / DM meds'],
     ['infection_sx','Recent infection / illness']]},
+  // ---- Trauma mode (ATLS xABCDE primary survey + secondary survey by region) ----
+  'tr_mech': {t:'Mechanism', sec:'tr', f:[
+    ['mech_mvc','Car / jeepney / bus crash (MVC)'],['mech_moto','Motorcycle / tricycle crash'],['no_helmet','No helmet (rider)'],
+    ['mech_ped','Pedestrian struck / run over (nasagasaan)'],['mech_hienergy','High energy: high speed, rollover, ejection, death in same vehicle'],
+    ['mech_fall','Fall from height'],['mech_fall_low','Ground-level fall / slip (nadulas, natumba)'],['mech_axial','Axial load / diving into shallow water'],
+    ['mech_assault','Assault / blunt blow (binugbog)'],['mech_stab','Stab wound (sinaksak)'],['mech_gsw','Gunshot wound (binaril)'],
+    ['mech_burn','Burn – flame / scald / contact'],['burn_elec','Electrical / lightning injury'],['burn_enclosed','Fire in enclosed space / smoke exposure'],
+    ['mech_crush','Crush / entrapment (naipit, nadaganan)'],['mech_drown','Drowning / submersion (nalunod)'],['head_inj','Head struck / head injury'],
+    ['loc','Loss of consciousness'],['intox','Intoxicated now (alcohol / drugs)']]},
+  'tr_x':    {t:'x – Exsanguinating external hemorrhage', sec:'tr', f:[['ext_hemorrhage','Catastrophic external bleeding']]},
+  'tr_a':    {t:'A – Airway (with C-spine protection)', sec:'tr', f:[['face_burn','Facial burns / singed hair / soot / carbonaceous sputum'],['voice_change','Hoarse voice / voice change'],['airway_blood','Blood / vomitus / teeth in airway']]},
+  'tr_b':    {t:'B – Breathing', sec:'tr', f:[['flail_seg','Paradoxical (flail) chest segment'],['open_chest','Open (sucking) chest wound'],['chest_wall','Chest wall tenderness / crepitus / rib fractures'],['subq_emph','Subcutaneous emphysema']]},
+  'tr_c':    {t:'C – Circulation', sec:'tr', f:[['pelvic_unstable','Pelvic instability / pain on gentle compression (do not rock)']]},
+  'tr_fast': {t:'eFAST', sec:'tr', f:[['fast_neg','eFAST negative'],['fast_abd','Free fluid – abdomen / pelvis'],['fast_peri','Pericardial fluid'],['fast_ptx','No lung sliding (pneumothorax)'],['fast_htx','Pleural fluid (hemothorax)']]},
+  'tr_d':    {t:'D – Disability', sec:'tr', f:[['lateralizing','Lateralizing signs (one-sided weakness / posturing)'],['cord_deficit','Spinal cord deficit (weakness / sensory level / priapism)']]},
+  'tr_e':    {t:'E – Exposure / burns', sec:'tr', f:[['burn_full','Full-thickness burn'],['burn_circ','Circumferential burn (limb / chest)'],['burn_special','Burn to face, hands, feet, genitalia, perineum or major joints']]},
+  'tr_head': {t:'Head / face', sec:'tr', f:[
+    ['scalp_hematoma','Scalp hematoma / laceration'],['basilar','Basal skull fracture signs (raccoon eyes, Battle sign, hemotympanum, CSF leak)'],['skull_fx','Open / depressed / palpable skull fracture'],
+    ['lucid','Lucid interval, then deterioration'],['amnesia','Amnesia ≥ 30 min before impact'],['vomit2','Vomiting ≥ 2 times after injury'],['sev_headache','Severe headache'],
+    ['post_seizure','Seizure after injury'],['not_normal','Child not acting normally (per parent)'],['face_fx','Facial fracture (midface instability, malocclusion, deformity)']]},
+  'tr_neck': {t:'Neck', sec:'tr', f:[
+    ['neck_midline','Midline C-spine tenderness'],['neck_pain','Neck pain'],['paresthesia','Paresthesias in hands / feet'],['distract','Painful distracting injury'],
+    ['cs_simple','Simple rear-end MVC'],['cs_amb','Ambulatory at any time / sitting up in ED'],['cs_delayed','Delayed onset of neck pain'],['cs_rotate','Can actively rotate neck 45° left and right'],
+    ['neck_pen','Neck wound breaching platysma'],['neck_hard','Hard sign: expanding / pulsatile hematoma, bruit / thrill, active bleeding, air bubbling'],['dysphagia','Dysphagia / hoarseness / hemoptysis after neck injury']]},
+  'tr_chest':{t:'Chest', sec:'tr', f:[
+    ['chest_pen','Penetrating chest wound'],['box_wound','Wound in the "cardiac box" (between nipples, clavicles to costal margin)'],['seatbelt','Seat-belt sign (chest / abdomen)'],
+    ['sternal','Sternal tenderness / fracture'],['first_rib','1st–2nd rib or scapular fracture'],['cxr_htx','CXR / US: hemothorax'],['tube_1500','Chest tube ≥ 1500 mL at once or > 200 mL/h']]},
+  'tr_abd':  {t:'Abdomen / pelvis / perineum', sec:'tr', f:[
+    ['abd_tender_tr','Abdominal tenderness / guarding'],['luq_tender','LUQ / left lower rib tenderness or left shoulder (Kehr) pain'],['ruq_tender_tr','RUQ / right lower rib tenderness'],
+    ['abd_pen','Penetrating abdominal / flank / back wound'],['evisceration','Evisceration'],['flank_ecchy','Flank ecchymosis / flank pain'],['pelvic_pain','Pelvic / hip pain'],
+    ['blood_meatus','Blood at urethral meatus'],['perineal','Perineal / scrotal ("butterfly") hematoma'],['high_prostate','High-riding prostate / vaginal laceration'],['unable_void','Unable to void']]},
+  'tr_spine':{t:'Spine / cord pattern', sec:'tr', f:[
+    ['tl_tender','Thoracolumbar midline tenderness / step-off'],['arms_weak','Arms weaker than legs (central cord pattern)'],['bs_pattern','One-sided weakness + opposite pain/temperature loss (Brown-Séquard)'],
+    ['ant_cord','Motor + pain/temperature loss, position sense spared (anterior cord)'],['saddle','Saddle anesthesia / sphincter loss']]},
+  'tr_ext':  {t:'Extremities / soft tissue', sec:'tr', f:[
+    ['long_bone','Long-bone deformity / suspected fracture'],['femur_fx','Femur fracture (one or both)'],['open_fx','Wound over fracture / bone exposed'],
+    ['hard_vasc','Hard signs: pulsatile bleeding, expanding hematoma, absent distal pulse, bruit / thrill'],['soft_vasc','Soft signs: weak pulse, ABI < 0.9, small stable hematoma, wound near vessel'],
+    ['comp_pain','Pain out of proportion / pain on passive stretch'],['comp_tense','Tense, swollen compartment'],['crush_long','Limb crushed / entrapped ≥ 1 h'],
+    ['dark_urine','Dark / cola-coloured urine'],['contaminated','Heavily contaminated wound (soil, farm, floodwater)']]},
+  'tr_preg': {t:'Pregnancy (if pregnant)', sec:'tr', f:[['uterine_tender','Uterine tenderness / contractions / rigid uterus'],['fhr_abn','Abnormal / absent fetal heart rate'],['rom','Leaking amniotic fluid']]},
   // ---- PMH / risk factors ----
   'pmh':     {t:'PMH / risk factors', sec:'pmh', f:[
     ['htn','Hypertension'],['dm','Diabetes'],['dm1','Type 1 DM'],['smoker','Smoker'],['dyslipid','Dyslipidemia'],['obesity','Obesity'],
@@ -254,7 +319,12 @@ Object.assign(FLABEL, {
   wbc_vhigh:'WBC > 15k', neut_high:'Neutrophils > 75 %', urea_high:'Urea > 7 mmol/L (BUN > 19)', lactate_high:'Lactate ≥ 2', lactate_4:'Lactate ≥ 4',
   age_ge50:'Age ≥ 50', age_ge65:'Age ≥ 65', age_lt40:'Age < 40', age_lt16:'Age < 16', male:'Male', female:'Female', repro_f:'Female 12–50 y', pregnant:'Pregnant',
   onset_sudden:'Sudden onset (seconds–minutes)', dur_lt24h:'Duration < 24 h', dur_le7d:'Duration ≤ 7 d', dur_gt7d:'Duration > 7 d', dur_ge14d:'Duration ≥ 14 d',
-  fever_d3_7:'Fever day 3–7 (critical phase window)', fever_any:'Fever (history or measured)'
+  fever_d3_7:'Fever day 3–7 (critical phase window)', fever_any:'Fever (history or measured)',
+  // trauma-derived
+  trauma:'Trauma / injury', penetrating:'Penetrating mechanism', blunt:'Blunt mechanism', fall_ge1m:'Fall ≥ 1 m / 5 stairs', fall_ge3m:'Fall ≥ 3 m (≈ 1 storey)',
+  air_threat:'Airway threatened', air_obst:'Airway obstructed', dec_bs_bil:'↓ Breath sounds both sides', pupil_uni:'Unilateral dilated / unreactive pupil', pupil_bil:'Both pupils fixed & dilated',
+  gcs_9_12:'GCS 9–12 (moderate TBI)', gcs_13_15:'GCS 13–15', gcs_lt13:'GCS < 13', t_lt35:'T < 35 °C (hypothermia)', sbp_lt110:'SBP < 110', hr_ge120:'HR ≥ 120',
+  inj_le3h:'Injury ≤ 3 h ago', inj_gt3h:'Injury > 3 h ago', tbsa_ge10:'Burn ≥ 10 % TBSA', tbsa_ge20:'Burn ≥ 20 % TBSA', bd_ge6:'Base deficit ≥ 6', helmet:'Helmet worn'
 });
 
 // ---------------- Free-text lexicon ----------------
@@ -359,6 +429,47 @@ const LEX = [
   ['may dengue sa bahay|kapitbahay.{0,15}dengue|dengue (cases|outbreak)', ['dengue_area']],
   ['natusok ng pako|kalawang|rusty nail|puncture wound', ['dirty_wound']],
   ['hindi nag-?insulin|missed insulin|ran out of insulin|stopped (insulin|meds)', ['missed_insulin']],
+  // trauma (English / Tagalog / Taglish)
+  ['naaksidente\\w*|aksidente|(?<!vascular )accident|(?<!(kidney|liver|lung|renal|needle-?stick) )injur(y|ed)|trauma|nasugatan|sugatan|nadisgrasya|disgrasya', ['trauma']],
+  ['nabangga|bumangga|binangga|nabanggaan|banggaan|car crash|vehicular|mvc|motor vehicle (crash|collision|accident)|road crash|road traffic|tumaob|bumaligtad', ['mech_mvc','trauma']],
+  ['motor(?! ?(weakness|deficit|function|exam|power|vehicle|strength))|motorsiklo|motorcycle|motorbike|naka-?motor|habal-?habal|tricycle|traysikel|scooter|angkas|rider', ['mech_moto','trauma']],
+  ['walang helmet|walang suot na helmet|hindi naka-?helmet|no helmet|without (a )?helmet|unhelmeted', ['no_helmet','mech_moto','trauma']],
+  ['naka-?helmet|may helmet|with (a )?helmet|helmeted|wearing (a )?helmet', ['helmet']],
+  ['nasagasaan|sinagasaan|nabundol|binundol|pedestrian|struck by (a )?(car|vehicle|jeep\\w*|bus|truck|tricycle|motorcycle)|hit by (a )?(car|vehicle|jeep\\w*|bus|truck|tricycle|motorcycle)', ['mech_ped','trauma']],
+  ['tumilapon|ejected|ejection|rollover|high[- ]speed|mabilis ang takbo|may namatay', ['mech_hienergy','trauma']],
+  ['nahulog|nalaglag|fell from|fall from|fallen from|nahulog mula|bumagsak mula', ['mech_fall','trauma']],
+  ['nadulas|natumba|napatid|slipped|tripped|ground[- ]level fall|fell (at home|in the bathroom|from standing)', ['mech_fall_low','trauma']],
+  ['puno ng niyog|niyog|coconut tree|bubong|roof|scaffold\\w*|ikalawang palapag|2nd floor|second floor|3rd floor|third floor|construction site', ['mech_fall','fall_ge3m','trauma']],
+  ['diving|nag-?dive|tumalon sa (ilog|dagat|pool)', ['mech_axial','trauma']],
+  ['sinuntok|binugbog|bugbog|pinalo|hinampas|sinipa|pinagtulungan|assault\\w*|mauled|beaten|rumble', ['mech_assault','trauma']],
+  ['sinaksak|nasaksak|saksak|tinaga|stab(bed)?|stab wounds?|knife|kutsilyo|patalim|balisong|ice ?pick|machete|itak|bolo', ['mech_stab','penetrating','trauma']],
+  ['binaril|nabaril|baril|tama ng bala|bala|gunshot|gsw|was shot|got shot|shot (in|at) the|bullet', ['mech_gsw','penetrating','trauma']],
+  ['napaso|nasunog|nalapnos|paso|sunog|burns?|burned|burnt|scald\\w*|flame|kumukulong tubig|mantika|lpg|sumabog|explosion', ['mech_burn','trauma']],
+  ['nakuryente|kinuryente|electrocut\\w*|electrical injury|kidlat|lightning|high[- ]voltage', ['burn_elec','mech_burn','trauma']],
+  ['usok|smoke inhalation|nakalanghap ng usok|enclosed space|sa loob ng bahay na nasusunog', ['burn_enclosed']],
+  ['naipit|nadaganan|nabagsakan|nabagsak(an)? ng|gumuho|crush(ed)? (injury|by|under)|crush injury|crushed|entrap\\w*|pinned (under|by)|trapped under', ['mech_crush','trauma']],
+  ['nalunod|nalulunod|nalubog|drown\\w*|submersion|submerged', ['mech_drown','trauma']],
+  ['basag ang ulo|putok ang ulo|pumutok ang ulo|bukol sa ulo|nauntog|untog|tumama ang ulo|head (injury|trauma|wound)|hit (his|her|the) head|struck (his|her|the) head', ['head_inj','trauma']],
+  ['nawalan ng ulirat|loss of consciousness|\\bloc\\b|knocked out|unconscious', ['loc']],
+  ['nakainom|amoy alak|lasing na lasing|intoxicated|drunk', ['intox']],
+  ['nagising (tapos|pero)|nakausap pa|lucid interval|talked and deteriorated', ['lucid']],
+  ['bukol sa (gilid|likod) ng ulo|scalp hematoma', ['scalp_hematoma']],
+  ['raccoon eyes|battle.?s sign|hemotympanum|csf (leak|rhinorrh\\w*|otorrh\\w*)|tumutulo ang tubig sa ilong', ['basilar']],
+  ['masakit ang batok|masakit ang leeg|neck pain', ['neck_pain']],
+  ['manhid|namamanhid|tingling|paresthesia\\w*', ['paresthesia']],
+  ['hindi maigalaw ang (dalawang )?(paa|binti)|paralyzed|paraplegi\\w*|quadripleg\\w*|tetrapleg\\w*|walang pakiramdam sa (paa|binti)', ['cord_deficit']],
+  ['balakang|pelvic (pain|fracture)|hip pain', ['pelvic_pain']],
+  ['kaliwang balikat|left shoulder (tip )?pain|kehr', ['luq_tender']],
+  ['dumudugo nang malakas|malakas ang pagdurugo|maraming dugo|duguan|bumubulwak|sumisirit ang dugo|active bleeding|profuse bleeding|spurting|arterial bleeding', ['ext_hemorrhage']],
+  ['bali|nabali|baling|fracture[ds]?|deformity|deformed', ['long_bone']],
+  ['lumabas ang buto|nakalabas ang buto|bone (exposed|sticking out)|open fracture|compound fracture', ['open_fx','long_bone']],
+  ['femur fracture|fractured femur|bali sa hita|baling hita', ['femur_fx']],
+  ['hindi makaihi|unable to void|cannot void|urinary retention', ['unable_void']],
+  ['kulay coke ang ihi|cola-colou?red urine|dark urine|maitim na ihi', ['dark_urine']],
+  ['blood thinner|pampalabnaw ng dugo|warfarin|apixaban|rivaroxaban|dabigatran|edoxaban|anticoagula\\w*', ['m_anticoag']],
+  ['clopidogrel|aspirin|antiplatelet', ['m_antiplt']],
+  ['paos|namamaos|hoarse voice|voice change|singed|carbonaceous|uling sa ilong', ['voice_change']],
+  ['hindi gumagalaw ang baby|walang heartbeat ang baby|fetal (distress|bradycardia)', ['fhr_abn']],
   // PMH
   ['high blood|altapresyon|hypertensi\\w*|\\bhtn\\b', ['htn']],
   ['diabet\\w*|\\bdm\\b|mataas ang asukal|may sugar', ['dm']],
@@ -1083,6 +1194,384 @@ KB.push(
  tx:['Reassurance, breathing coaching','Lorazepam 0.5–1 mg PO sparingly [V]','Mental health referral (PH NCMH crisis line 1553)'],
  txs:'NICE (intl)', dispo:'Home.', tk:['psychosis','anxiety','Psychosis, mood & anxiety disorders']}
 );
+// ───────────────────────── S21 TRAUMA (+ S3 shock · S16 burns/drowning · S22 ortho · S2 crush) ─────────────────────────
+// Trauma conditions are only scored when trauma mode is on or a mechanism of injury is recorded (tr:1).
+// Topic map: Tintinalli 9e Section 21 (trauma in adults, children, older adults, pregnancy; head, spine, face, neck,
+// pulmonary, cardiac, abdominal, flank/buttock, GU and penetrating extremity trauma) – topic names only, original wording.
+// Content sources: ATLS 10th ed (ACS 2018) / ATLS 11th ed (ACS 2025, xABCDE), named trials and society guidelines;
+// PH: DOH AO 2014-0002 (violence & injury prevention), AO 2014-0007 (prehospital EMS), DO 2021-0001 (trauma & burn
+// specialty centres), AO 2013-0005 (ONEISS injury registry), RA 10054 (motorcycle helmet law), RA 10932 (no-deposit / transfer),
+// PCS Committee on Trauma BEST/BETTER courses & Trauma, Injury and Burn Care Commission.
+const TR_SRC = 'ATLS 10th ed (2018) / 11th ed (2025) (intl)';
+const TR_PH = 'DOH DO 2021-0001 (amended 2023) trauma/burn centres · RA 10932 (PH)';
+const TXA_TX = 'TXA if bleeding and ≤ 3 h from injury: 1 g IV over 10 min, then 1 g IV over 8 h (child 15 mg/kg max 1 g, then 2 mg/kg/h) [V] – do not start after 3 h (CRASH-2)';
+const MTP_TX = 'Damage-control resuscitation: blood early (low-titre O whole blood if available, or MTP pRBC : plasma : platelets 1:1:1); crystalloid only as a bridge (≤ 1 L warmed adult, 10–20 mL/kg child) [V]; calcium chloride 1 g IV per ~4 units or iCa < 1.1 [V]';
+KB.push(
+{id:'tr_tension', n:'Tension pneumothorax (traumatic)', sec:21, topic:'Pulmonary trauma', mnm:1, p:0, tr:1,
+ g:['dec_bs_uni','hyperres','trach_dev','fast_ptx','cxr_ptx','subq_emph'],
+ w:{dec_bs_uni:3,hyperres:2.5,trach_dev:2,cxr_ptx:3,jvd:1.5,sbp_lt90:1.5,spo2_lt90:1.5,spo2_lt94:0.5,hr_gt100:0.5,subq_emph:1.5,chest_wall:1,dyspnea:0.5,chest_pen:1,
+    dec_bs_bil:-1,fast_peri:-2,muffled:-1,cxr_htx:-1},
+ a:{dec_bs_uni:-3,cxr_ptx:-2},
+ rf:['sbp_lt90','spo2_lt90','trach_dev','jvd'],
+ dx:['Clinical diagnosis – decompress first: do NOT wait for CXR in a hypotensive / hypoxic patient','eFAST: absent lung sliding / no B-lines / lung point (if it does not delay decompression)','CXR after the chest tube; CT chest when stable (occult PTX before positive-pressure ventilation or air transport)'],
+ dxs:TR_SRC+' · BTS 2023 pleural (intl)',
+ tx:['Immediate needle decompression: 14 G, ≥ 8 cm catheter, 4th–5th ICS just anterior to the mid-axillary line (adult); 2nd ICS mid-clavicular line in children – or finger thoracostomy (preferred if skilled, and in the intubated patient)',
+     'Follow with a chest tube (4th–5th ICS, anterior to mid-axillary line); small-bore (14 F) acceptable for pneumothorax without blood [V]',
+     'High-flow O₂; analgesia (fentanyl 0.5–1 mcg/kg IV titrated) [V]; re-assess after every intervention (tube kinked / re-accumulating?)'],
+ txs:TR_SRC+' · EAST/WTA chest trauma (intl)',
+ dispo:'Admit (surgery / trauma). Transfer to a trauma-capable hospital after decompression and chest tube if no surgeon on site.', dps:TR_SRC+' · '+TR_PH,
+ tk:['chesttr','tension pneumothorax','Chest & cardiac trauma'], tkx:[['ptx','Pneumothorax – decompression',8],['abcde','Primary survey',21]]},
+{id:'tr_openptx', n:'Open pneumothorax (sucking chest wound)', sec:21, topic:'Pulmonary trauma', mnm:1, p:-0.5, tr:1,
+ g:['open_chest'],
+ w:{open_chest:5,chest_pen:1.5,penetrating:0.5,dec_bs_uni:1,dyspnea:0.5,spo2_lt94:0.5,cxr_ptx:1},
+ rf:['spo2_lt90','sbp_lt90'],
+ dx:['Clinical (air moving through the chest wall wound)','eFAST / CXR for associated pneumo-/hemothorax; look for tension after the seal'],
+ dxs:TR_SRC,
+ tx:['Cover with a vented chest seal or a square occlusive dressing taped on 3 sides; watch for tension (remove seal / decompress)','Chest tube remote from the wound, then surgical closure of the defect','O₂; IV access; tetanus and antibiotic per wound (see Open wounds / tetanus)'],
+ txs:TR_SRC+' (vented seal per TCCC/ATLS 11)',
+ dispo:'Admit surgery; OR for wound closure / associated injury.', dps:TR_SRC,
+ tk:['chesttr','open pneumothorax','Chest & cardiac trauma'], tkx:[['tetanus','Tetanus prophylaxis',6]]},
+{id:'tr_htx', n:'Massive hemothorax', sec:21, topic:'Pulmonary trauma', mnm:1, p:0, tr:1,
+ g:['cxr_htx','fast_htx','dec_bs_uni','tube_1500'],
+ w:{cxr_htx:3.5,tube_1500:4,dec_bs_uni:2,sbp_lt90:1.5,si_ge1:1,cool_periph:0.5,chest_pen:1,penetrating:0.5,chest_wall:1,spo2_lt94:0.5,
+    hyperres:-2,trach_dev:-0.5,jvd:-1,fast_peri:-1.5},
+ a:{dec_bs_uni:-2},
+ rf:['sbp_lt90','tube_1500'],
+ dx:['eFAST pleural views (fluid above the diaphragm) / supine CXR (diffuse haziness)','Chest tube output: ≥ 1500 mL at once or > 200 mL/h for 2–4 h, or ongoing transfusion need → surgical thoracic exploration','Type & crossmatch, CBC, coagulation, lactate / base deficit, VBG'],
+ dxs:TR_SRC,
+ tx:['Large-bore IV ×2 / IO; '+MTP_TX,'Chest tube 28–32 F (smaller bore increasingly accepted) 4th–5th ICS anterior to mid-axillary line; autotransfusion if available [V]',
+     TXA_TX,'Urgent surgery (thoracotomy) by output / physiology – call surgery early or arrange transfer'],
+ txs:TR_SRC+' · CRASH-2 (Lancet 2010/2011) · PROPPR (JAMA 2015) (intl)',
+ dispo:'OR / ICU. If no thoracic / general surgeon: chest tube + blood, then immediate transfer to a trauma centre.', dps:TR_SRC+' · '+TR_PH,
+ tk:['chesttr','hemothorax','Chest & cardiac trauma'], tkx:[['mtp','Massive transfusion',21],['txa','TXA',21]]},
+{id:'tr_tamponade', n:'Cardiac tamponade (traumatic)', sec:21, topic:'Cardiac trauma', mnm:1, p:-0.5, tr:1,
+ g:['fast_peri','us_effusion','box_wound','muffled','chest_pen'],
+ w:{us_effusion:5,box_wound:2.5,chest_pen:1.5,penetrating:0.5,muffled:2,jvd:2,sbp_lt90:1.5,narrow_pp:1,hr_gt100:0.5,
+    dec_bs_uni:-1.5,hyperres:-1.5,fast_abd:-0.5},
+ a:{us_effusion:-3},
+ rf:['sbp_lt90','us_effusion','muffled'],
+ dx:['eFAST subxiphoid / parasternal view first: pericardial fluid ± RV diastolic collapse, plethoric IVC','Beck triad (hypotension, distended neck veins, muffled heart sounds) is often incomplete – absent JVD with hypovolemia','ECG (low voltage / alternans); blood type & crossmatch; CXR for associated hemopneumothorax'],
+ dxs:TR_SRC+' · EAST/WTA (intl)',
+ tx:['Penetrating wound + hypotension + pericardial fluid → immediate OR (sternotomy / thoracotomy); call surgery now','Arrest or peri-arrest after penetrating chest trauma with signs of life lost < 15 min → resuscitative thoracotomy (pericardiotomy) by a trained operator',
+     'Pericardiocentesis (ultrasound-guided) only as a bridge when no surgeon is available – clotted blood often cannot be aspirated','Volume as a bridge (blood preferred); avoid positive-pressure ventilation / induction until ready to decompress if possible; '+TXA_TX],
+ txs:TR_SRC+' · EAST 2015 resuscitative thoracotomy (intl)',
+ dispo:'OR. If no cardiothoracic / trauma surgeon: decompress (pericardiocentesis) and transfer immediately to a trauma centre.', dps:TR_SRC+' · '+TR_PH,
+ tk:['chesttr','cardiac tamponade','Chest & cardiac trauma'], tkx:[['pericardio','Pericardiocentesis',4],['mtp','Massive transfusion',21]]},
+{id:'tr_flail', n:'Flail chest / pulmonary contusion', sec:21, topic:'Pulmonary trauma', mnm:1, p:-0.5, tr:1,
+ g:['flail_seg','chest_wall'],
+ w:{flail_seg:5,chest_wall:2,spo2_lt94:1,spo2_lt90:1,rr_ge30:1,rr_ge22:0.5,dyspnea:0.5,blunt:0.5,mech_hienergy:0.5,age_ge65:0.5,subq_emph:0.5,
+    penetrating:-1},
+ rf:['spo2_lt90','rr_ge30'],
+ dx:['Clinical (paradoxical movement); CXR / CT chest (rib fractures, contusion worsens over 24–48 h)','ABG / SpO₂ trend; look for pneumo-/hemothorax and blunt cardiac injury (ECG, troponin)'],
+ dxs:TR_SRC+' · EAST rib fracture guideline (intl)',
+ tx:['O₂; early, aggressive multimodal analgesia: paracetamol 1 g IV/PO q6h [V], NSAID if no contraindication [V], fentanyl 0.5–1 mcg/kg IV titrated [V]; regional block (serratus anterior / erector spinae / epidural) where available',
+     'Avoid fluid overload once perfused; NIV in selected alert patients; intubate for respiratory failure','Surgical rib fixation is an option in flail chest (referral)'],
+ txs:TR_SRC+' · EAST 2016 rib fractures (intl)',
+ dispo:'Admit (HDU/ICU if hypoxic, ≥ 3 rib fractures with age ≥ 65, or flail).', dps:TR_SRC+' · EAST (intl)',
+ tk:['chesttr','flail chest','Chest & cardiac trauma'], tkx:[['oldtrauma','Trauma in older adults',21]]},
+{id:'tr_aorta', n:'Blunt thoracic aortic injury', sec:21, topic:'Cardiac & great-vessel trauma', mnm:1, p:-1, tr:1,
+ g:['cxr_mediast','first_rib','mech_hienergy','pulse_deficit'],
+ w:{cxr_mediast:3.5,first_rib:1.5,mech_hienergy:2,mech_fall:0.5,fall_ge3m:0.5,pulse_deficit:2,sternal:0.5,chest_wall:0.5,cp_back:1,sbp_lt90:0.5,
+    penetrating:-1.5},
+ rf:['sbp_lt90','cxr_mediast'],
+ dx:['Mechanism (high-speed deceleration, fall from height) is enough to image: CT angiography of the chest','CXR clues: widened mediastinum, obscured aortic knob, left apical cap, deviated trachea / NG tube, 1st–2nd rib fracture'],
+ dxs:TR_SRC+' · SVS 2011 / EAST 2015 BTAI (intl)',
+ tx:['If no ongoing hemorrhage elsewhere and no TBI: anti-impulse therapy – target HR < 100 and SBP ≤ 100–120 (esmolol 500 mcg/kg bolus then 50–300 mcg/kg/min) [V]','Analgesia [V]; treat other bleeding first (it takes priority)','Definitive: endovascular repair (TEVAR) – vascular / cardiothoracic referral'],
+ txs:TR_SRC+' · SVS 2011 / EAST 2015 (intl)',
+ dispo:'ICU; transfer to a centre with vascular / cardiothoracic surgery.', dps:TR_SRC+' · '+TR_PH,
+ tk:['chesttr','aortic injury','Chest & cardiac trauma'], tkx:[['aorta','Aortic dissection / AAA',7]]},
+{id:'tr_bci', n:'Blunt cardiac injury (myocardial contusion)', sec:21, topic:'Cardiac trauma', mnm:0, p:-1, tr:1,
+ g:['sternal','chest_wall'],
+ w:{sternal:3,chest_wall:1,blunt:0.5,mech_mvc:0.5,trop_pos:2,ecg_af:1.5,ecg_std:1,hr_gt100:0.5,sbp_lt90:0.5,penetrating:-2},
+ rf:['sbp_lt90','ecg_af'],
+ dx:['ECG on arrival (new arrhythmia, conduction block, ST changes) + troponin; both normal → BCI essentially excluded','Echo if ECG/troponin abnormal or hypotension unexplained by bleeding'],
+ dxs:'EAST 2012 blunt cardiac injury (intl) · '+TR_SRC,
+ tx:['Monitor 24–48 h if ECG or troponin abnormal; treat arrhythmias per ACLS','Cardiogenic shock: echo, inotropes, cardiology / cardiothoracic surgery'],
+ txs:'EAST 2012 (intl)',
+ dispo:'Normal ECG + troponin → no BCI-specific monitoring; abnormal → telemetry admission.', dps:'EAST 2012 (intl)',
+ tk:['chesttr','blunt cardiac injury','Chest & cardiac trauma']},
+{id:'tr_shock', n:'Hemorrhagic shock (ATLS class – see Scores)', sec:3, topic:'Approach to traumatic shock', mnm:1, p:0, tr:1,
+ g:['sbp_lt90','si_ge1','cool_periph','ext_hemorrhage','bd_ge6','hr_ge120'],
+ w:{sbp_lt90:2.5,si_ge1:1.5,hr_ge120:1,hr_gt100:0.5,cool_periph:1,narrow_pp:0.5,bd_ge6:1.5,lactate_4:1,ext_hemorrhage:2,fast_abd:0.5,pelvic_unstable:0.5,femur_fx:0.5,gcs_lt15:0.3,
+    jvd:-1.5,hr_lt60:-1,cord_deficit:-0.5,age_lt16:-1},
+ rf:['sbp_lt90','si_ge1','bd_ge6','ext_hemorrhage'],
+ dx:['Find the source – "blood on the floor and four more": external, chest (eFAST / CXR), abdomen (eFAST), pelvis (X-ray / exam), long bones (femur)','Type & crossmatch, CBC, coagulation (viscoelastic testing if available), fibrinogen, lactate, base deficit (VBG), iCa','ATLS class, shock index and ABC score in Scores; note older adults / β-blockers blunt tachycardia'],
+ dxs:TR_SRC+' · Nunez 2009 ABC score (intl)',
+ tx:['x: stop external bleeding – direct pressure, tourniquet (limb), wound packing, pelvic binder','Two large-bore IV / IO; '+MTP_TX,TXA_TX,
+     'Permissive hypotension until bleeding is controlled: SBP 80–90 / MAP 50–65 if mentating – NOT in TBI or spinal cord injury (keep SBP ≥ 100–110, MAP ≥ 80)','Prevent the lethal triad: warm fluids/blankets, correct calcium, reverse anticoagulants; early surgery / angio-embolisation (hemorrhage control is the treatment)'],
+ txs:TR_SRC+' · CRASH-2 (Lancet 2010/2011) · PROPPR (JAMA 2015) · European trauma bleeding guideline 2023 (intl)',
+ dispo:'OR / IR / ICU. Non-responder or transient responder without surgical capability → stabilise and transfer immediately to a trauma centre (no deposit may be demanded – RA 10932).', dps:TR_SRC+' · '+TR_PH,
+ tk:['mtp','massive transfusion','Massive transfusion & shock index',21], tkx:[['txa','TXA',21],['abcde','Primary survey',21],['undiffshock','Undifferentiated shock',3]]},
+{id:'tr_solid', n:'Solid organ injury (spleen / liver)', sec:21, topic:'Abdominal trauma', mnm:1, p:0, tr:1,
+ g:['fast_abd','us_fluid','luq_tender','ruq_tender_tr','abd_tender_tr'],
+ w:{us_fluid:4,luq_tender:2.5,ruq_tender_tr:2,abd_tender_tr:1.5,seatbelt:1,chest_wall:0.5,blunt:0.5,mech_mvc:0.3,mech_moto:0.3,sbp_lt90:1,si_ge1:0.5,hr_gt100:0.5,distended:0.5,
+    rebound:0.5,fast_neg:-2},
+ rf:['sbp_lt90','si_ge1'],
+ dx:['eFAST: free fluid in RUQ (Morison), LUQ (splenorenal) or pelvis – positive + unstable → OR / IR without CT','Hemodynamically normal: CT abdomen/pelvis with IV contrast (grade, active extravasation / blush)','Serial exam and Hb; LFTs; type & crossmatch'],
+ dxs:TR_SRC+' · WSES 2017 spleen / WSES 2020 liver trauma (intl)',
+ tx:['Unstable / transient responder with free fluid → laparotomy (or angio-embolisation if immediately available); '+MTP_TX,TXA_TX,
+     'Stable (any grade): non-operative management in a facility with monitoring, OR and blood available; angio-embolisation for contrast blush','After splenectomy / extensive embolisation: pneumococcal, meningococcal and Hib vaccination (≈ 14 days or before discharge) [V]'],
+ txs:'WSES 2017 / 2020 (intl) · '+TR_SRC,
+ dispo:'Admit surgery (HDU for NOM); OR if unstable. No surgeon / blood bank on site → transfer to a trauma centre.', dps:'WSES (intl) · '+TR_PH,
+ tk:['abdgu','splenic liver injury','Abdominal, flank & GU trauma'], tkx:[['mtp','Massive transfusion',21],['txa','TXA',21]]},
+{id:'tr_hollow', n:'Hollow viscus / mesenteric injury', sec:21, topic:'Abdominal trauma', mnm:1, p:-0.5, tr:1,
+ g:['seatbelt','abd_pen','evisceration','abd_tender_tr','rebound'],
+ w:{seatbelt:2.5,abd_pen:2.5,evisceration:3,rebound:2,rigid:2,abd_tender_tr:1,t_ge38:0.5,penetrating:0.5,mech_gsw:1,tl_tender:0.5,us_fluid:0.5,
+    luq_tender:-0.5,ruq_tender_tr:-0.5},
+ rf:['rebound','rigid','evisceration'],
+ dx:['CT with IV contrast may miss early injury: free fluid without solid-organ injury, bowel-wall thickening, mesenteric stranding, free air → surgical review','Serial abdominal examination; repeat CT or laparoscopy if worsening','Seat-belt sign: look for Chance (flexion-distraction) lumbar fracture'],
+ dxs:TR_SRC+' · EAST hollow viscus / penetrating abdominal trauma (intl)',
+ tx:['Peritonitis, evisceration, GSW to the abdomen or hemodynamic instability → laparotomy','Antibiotics for penetrating / perforation: cefoxitin 2 g IV or ceftriaxone 2 g + metronidazole 500 mg IV [V]','Cover eviscerated bowel with saline-moist sterile dressing – do not reduce; NPO; tetanus [V]'],
+ txs:TR_SRC+' · EAST 2012 antibiotics in penetrating abdominal trauma (intl)',
+ dispo:'Admit surgery / OR. Stable stab wound without peritonitis → serial exam or CT in a surgical unit.', dps:TR_SRC,
+ tk:['abdgu','hollow viscus injury','Abdominal, flank & GU trauma'], tkx:[['tetanus','Tetanus prophylaxis',6]]},
+{id:'tr_pelvis', n:'Pelvic fracture with hemorrhage', sec:22, topic:'Pelvic injuries · traumatic shock', mnm:1, p:0, tr:1,
+ g:['pelvic_unstable','pelvic_pain','perineal'],
+ w:{pelvic_unstable:4.5,pelvic_pain:1.5,perineal:1.5,blood_meatus:1,high_prostate:0.5,fall_ge3m:1,mech_hienergy:1,mech_ped:1,mech_moto:0.5,mech_crush:0.5,
+    sbp_lt90:1.5,si_ge1:1,bd_ge6:0.5,fast_neg:0.5,femur_fx:0.3},
+ rf:['sbp_lt90','pelvic_unstable','blood_meatus'],
+ dx:['AP pelvis X-ray in the resus bay (unstable patient); CT with IV contrast when stable (contrast blush = arterial bleeding)','eFAST: negative FAST + shock + pelvic fracture → pelvic (retroperitoneal) source likely','Blood at meatus / perineal hematoma / high-riding prostate → retrograde urethrogram before any catheter'],
+ dxs:TR_SRC+' · WSES-AAST 2017 pelvic trauma (intl)',
+ tx:['Pelvic binder (or sheet) centred over the greater trochanters as soon as suspected – do not repeatedly spring the pelvis','Two large-bore IV / IO; '+MTP_TX,TXA_TX,
+     'Permissive hypotension (not with TBI); persistent instability → preperitoneal packing ± external fixation and/or angio-embolisation (REBOA in specialist centres)','No urethral catheter if urethral injury suspected; analgesia (fentanyl 0.5–1 mcg/kg IV) [V]'],
+ txs:'WSES-AAST 2017 · '+TR_SRC+' · CRASH-2 (intl)',
+ dispo:'Hemodynamically unstable pelvic fracture → trauma centre with IR / orthopedic trauma (transfer early, binder on).', dps:'WSES-AAST 2017 (intl) · '+TR_PH,
+ tk:['lowerlimb','pelvic binder','Lower limb & pelvis (pelvic binder)',22], tkx:[['mtp','Massive transfusion',21],['txa','TXA',21],['abdgu','GU trauma',21]]},
+{id:'tr_edh', n:'Epidural hematoma (EDH)', sec:21, topic:'Head trauma', mnm:1, p:-0.5, tr:1,
+ g:['head_inj','lucid','skull_fx','pupil_uni','lateralizing','gcs_lt15','scalp_hematoma'],
+ w:{lucid:3.5,skull_fx:2,scalp_hematoma:1,head_inj:1,pupil_uni:2,lateralizing:1.5,gcs_lt15:0.5,gcs_lt13:1,vomit2:0.5,sev_headache:0.5,no_helmet:1,mech_moto:0.5,mech_assault:0.5,age_lt40:1,
+    hr_lt60:0.5,htn_sev:0.5,age_ge65:-1,m_anticoag:-1,mech_fall_low:-0.5},
+ rf:['pupil_uni','gcs_le8','lateralizing','lucid'],
+ dx:['Non-contrast CT head immediately (biconvex, does not cross sutures; temporal bone fracture – middle meningeal artery)','CT C-spine (same sitting) in any significant head injury','Glucose, CBC, coagulation, type & screen; ABG'],
+ dxs:'BTF 2016 severe TBI (4th ed) (intl) · '+TR_SRC,
+ tx:['Airway: RSI with in-line stabilisation if GCS ≤ 8 or deteriorating (ketamine 1–2 mg/kg IV, lower in shock [V]; rocuronium 1–1.2 mg/kg [V]); avoid hypoxia (SpO₂ ≥ 94 %) and hypotension (SBP ≥ 100–110)',
+     'Herniation signs (blown pupil, posturing, Cushing): head up 30°, 3 % saline 250 mL (or 2–5 mL/kg) IV over 10–20 min [V] or mannitol 0.5–1 g/kg IV if not hypotensive [V]; brief hyperventilation (PaCO₂ 30–35) only as a bridge',
+     'Emergency neurosurgical evacuation (craniotomy); reverse any anticoagulant; TXA within 3 h in mild–moderate TBI (CRASH-3): 1 g IV over 10 min, then 1 g over 8 h [V]'],
+ txs:'BTF 2016 (intl) · CRASH-3 (Lancet 2019) · '+TR_SRC,
+ dispo:'Neurosurgery / OR now. No neurosurgeon on site → immediate transfer (DOH brain & spine / trauma centre) after airway + hemodynamic stabilisation.', dps:TR_SRC+' · '+TR_PH,
+ tk:['icp','epidural hematoma','TBI / raised ICP'], tkx:[['cthead','Canadian CT head rule',21],['transfer','Interfacility transfer',1]]},
+{id:'tr_sdh', n:'Acute subdural hematoma (SDH)', sec:21, topic:'Head trauma · trauma in older adults', mnm:1, p:-0.5, tr:1,
+ g:['head_inj','gcs_lt15','m_anticoag','lateralizing','pupil_uni'],
+ w:{head_inj:1,age_ge65:1.5,m_anticoag:2.5,m_antiplt:1,mech_fall_low:1.5,mech_fall:0.5,alcohol:0.5,intox:0.5,gcs_lt15:1,confusion:1,headache:0.5,sev_headache:0.5,vomit2:0.5,vomiting:0.3,lateralizing:1,pupil_uni:1,
+    lucid:-0.5,age_lt40:-0.5},
+ rf:['m_anticoag','gcs_lt15','lateralizing','pupil_uni'],
+ dx:['Non-contrast CT head now (crescentic, crosses sutures); anticoagulated patients: CT even after minor head injury','PT/INR, aPTT, CBC, drug + last dose time (DOAC); consider repeat CT if deteriorating','CT C-spine in older adults after a fall'],
+ dxs:'BTF 2016 (intl) · ACEP 2023 mild TBI clinical policy (intl) · '+TR_SRC,
+ tx:['Reverse anticoagulation immediately if bleed on CT (or high suspicion + deteriorating): warfarin → 4-factor PCC 25–50 IU/kg by INR + vitamin K 10 mg IV slowly [V] (FFP 10–15 mL/kg if PCC unavailable [V]); dabigatran → idarucizumab 5 g IV [V]; Xa inhibitor → andexanet or 4F-PCC 50 IU/kg [V]',
+     'Airway / BP / herniation management as for TBI; avoid hypotension and hypoxia','Neurosurgery: evacuation by thickness, midline shift and GCS; early seizure prophylaxis in severe TBI (levetiracetam or phenytoin per local protocol) [V]'],
+ txs:'Neurocritical Care Society/SCCM 2016 anticoagulant reversal (intl) · BTF 2016 (intl)',
+ dispo:'Admit neurosurgery / ICU; no neurosurgeon → transfer. Older adult: geriatric trauma care (delirium, falls work-up, goals of care).', dps:'BTF 2016 (intl) · '+TR_PH,
+ tk:['oldtrauma','subdural anticoagulant','Trauma in older adults',21], tkx:[['reversal','Anticoagulant reversal',18],['icp','TBI / raised ICP',21],['cthead','Canadian CT head rule',21]]},
+{id:'tr_tbi', n:'Traumatic brain injury – contusion / traumatic SAH / DAI (severity by GCS)', sec:21, topic:'Head trauma', mnm:1, p:0, tr:1,
+ g:['head_inj','gcs_lt15','loc','pupil_uni','pupil_bil'],
+ w:{head_inj:1,gcs_lt15:1,gcs_lt13:1,gcs_le8:1,loc:1,mech_hienergy:1,no_helmet:1,mech_moto:0.5,mech_ped:0.5,mech_assault:0.3,pupil_bil:1.5,pupil_uni:0.5,basilar:1,amnesia:0.5,confusion:0.5,post_seizure:0.5,
+    lucid:-0.5},
+ rf:['gcs_le8','pupil_uni','pupil_bil'],
+ dx:['CT head (all moderate / severe; minor by Canadian CT head / PECARN rules); CT C-spine','Severity: GCS 13–15 mild · 9–12 moderate · 3–8 severe (see Scores); record best motor response and pupils before sedation','Glucose, Na, coagulation, ethanol level (do not attribute low GCS to alcohol)'],
+ dxs:'BTF 2016 (intl) · Teasdale & Jennett 1974 · Stiell 2001 Canadian CT head (intl)',
+ tx:['Prevent secondary injury: SpO₂ ≥ 94 %, PaCO₂ 35–45, SBP ≥ 100 (50–69 y) / ≥ 110 (15–49 or ≥ 70 y), glucose 80–180 mg/dL, normothermia, head up 30° (BTF 2016 targets) [V]','GCS ≤ 8: RSI with in-line stabilisation [V]; herniation: hyperosmolar therapy (3 % saline 250 mL or mannitol 0.5–1 g/kg) [V]',
+     'Mild–moderate TBI ≤ 3 h: TXA 1 g IV over 10 min, then 1 g over 8 h (CRASH-3) [V]; severe TBI: early seizure prophylaxis × 7 days [V]','No steroids in TBI (CRASH trial harm)'],
+ txs:'BTF 2016 (intl) · CRASH-3 2019 · CRASH 2004 (intl)',
+ dispo:'Moderate / severe → neurosurgical centre (ICU). Mild with normal CT, normal neuro exam and a responsible adult → discharge with head-injury advice.', dps:'BTF 2016 · ACEP 2023 (intl) · '+TR_PH,
+ tk:['icp','traumatic brain injury','TBI / raised ICP'], tkx:[['cthead','Canadian CT head rule',21],['gcs','GCS calculator',14]]},
+{id:'tr_mtbi', n:'Minor head injury / concussion', sec:21, topic:'Head trauma (minor)', mnm:0, p:0.5, tr:1,
+ g:['head_inj','loc','amnesia','scalp_hematoma'],
+ w:{head_inj:1.5,loc:1,amnesia:0.5,headache:0.5,dizziness:0.5,vomiting:0.3,gcs_13_15:1,scalp_hematoma:0.5,
+    gcs_lt13:-3,pupil_uni:-2,lateralizing:-2,m_anticoag:-1,skull_fx:-1.5,lucid:-2},
+ rf:['vomit2','m_anticoag','age_ge65'],
+ dx:['Apply Canadian CT head rule (adults, GCS 13–15) or PECARN (children) – see Scores','No CT needed if the rule is negative; CT if anticoagulated, seizure, or worsening'],
+ dxs:'Stiell 2001 · Kuppermann 2009 PECARN · ACEP 2023 mild TBI (intl)',
+ tx:['Analgesia: paracetamol 15 mg/kg (max 1 g) PO [V]; avoid sedatives','Written head-injury advice: return if worsening headache, repeated vomiting, drowsiness, seizure, weakness; graded return to school / work'],
+ txs:'ACEP 2023 · Concussion in Sport Group 2023 (intl)',
+ dispo:'Discharge with a responsible adult if rule-negative or CT normal and GCS 15; observe 4–6 h otherwise.', dps:'ACEP 2023 (intl)',
+ tk:['cthead','minor head injury','Canadian CT head rule',21], tkx:[['pecarnhead','PECARN head (children)',12]]},
+{id:'tr_cspine', n:'Cervical spine injury', sec:21, topic:'Spine trauma', mnm:1, p:0, tr:1,
+ g:['neck_midline','neck_pain','paresthesia','cord_deficit','arms_weak','mech_axial'],
+ w:{neck_midline:3,neck_pain:1,paresthesia:1.5,cord_deficit:2.5,arms_weak:2,mech_axial:2,mech_hienergy:1,mech_moto:0.5,fall_ge1m:0.5,age_ge65:0.5,gcs_lt15:0.3,
+    hr_lt60:0.5,sbp_lt90:0.3,neck_pen:-1},
+ a:{neck_midline:-2},
+ rf:['cord_deficit','arms_weak','paresthesia'],
+ dx:['Canadian C-spine rule / NEXUS (see Scores) for alert, stable adults; unreliable patients → CT C-spine','CT is first-line in adults; MRI for neurologic deficit, suspected ligamentous injury or cord syndrome','Plain films only if CT unavailable (3 views) – PH district hospitals: immobilise and transfer if CT not available'],
+ dxs:'Stiell 2001 · Hoffman 2000 NEXUS · '+TR_SRC+' · EAST 2015 C-spine clearance (intl)',
+ tx:['Spinal motion restriction (collar / in-line stabilisation; minimise time on a long board); log-roll','Airway: video laryngoscopy with manual in-line stabilisation (remove collar front)',
+     'Cord injury: avoid hypotension – MAP 85–90 mmHg for 7 days (fluids, then norepinephrine 0.05–0.5 mcg/kg/min) [V]; neurogenic shock with bradycardia → atropine 0.5–1 mg IV [V]; no routine methylprednisolone'],
+ txs:'AANS/CNS 2013 acute cervical spine & cord injury (intl) · '+TR_SRC,
+ dispo:'Fracture / cord injury → spine surgery (DOH brain & spine centre); transfer with spinal motion restriction.', dps:'AANS/CNS 2013 (intl) · '+TR_PH,
+ tk:['cspine','c-spine','Canadian C-spine rule & NEXUS'], tkx:[['smr','Spinal motion restriction',1]]},
+{id:'tr_tlspine', n:'Thoracolumbar spine injury / spinal cord syndromes', sec:21, topic:'Spine trauma', mnm:1, p:-0.5, tr:1,
+ g:['tl_tender','cord_deficit','bs_pattern','ant_cord','saddle'],
+ w:{tl_tender:3,cord_deficit:2.5,bs_pattern:3,ant_cord:3,saddle:2,fall_ge3m:1,mech_fall:0.5,seatbelt:0.5,mech_hienergy:0.5,hr_lt60:0.5,sbp_lt90:0.5,
+    neck_midline:-0.5},
+ rf:['cord_deficit','saddle'],
+ dx:['CT thoracic / lumbar spine (reformats from chest-abdomen CT) for high-energy mechanism, TL tenderness, or another spine fracture (image the whole spine – non-contiguous fractures ~ 10–20 %)','MRI for neurologic deficit; document ASIA motor / sensory level and rectal tone',
+     'Syndromes: central cord (arms > legs, older adults, hyperextension), Brown-Séquard (penetrating), anterior cord (motor + pain/temperature lost, proprioception spared), cauda equina (saddle anesthesia, retention)'],
+ dxs:'AANS/CNS 2013 (intl) · ISNCSCI / ASIA (intl) · '+TR_SRC,
+ tx:['Log-roll, spinal motion restriction; pressure-area care; urinary catheter for retention (if no urethral injury)','Neurogenic shock (hypotension + bradycardia + warm skin): exclude bleeding first; fluids, then norepinephrine [V], atropine for bradycardia [V]; MAP 85–90 mmHg [V]','No routine steroids; early spine surgery referral for unstable fractures / deficit'],
+ txs:'AANS/CNS 2013 (intl) · AO Spine 2017 (intl)',
+ dispo:'Spine surgery / DOH brain & spine centre; transfer with spinal precautions.', dps:'AANS/CNS 2013 (intl) · '+TR_PH,
+ tk:['smr','spinal motion restriction','Spinal motion restriction',1], tkx:[['cspine','C-spine rules',21]]},
+{id:'tr_face', n:'Maxillofacial injury with airway threat', sec:21, topic:'Trauma to the face', mnm:1, p:-0.5, tr:1,
+ g:['face_fx','airway_blood','air_threat','air_obst'],
+ w:{face_fx:3,airway_blood:2.5,air_threat:1.5,air_obst:2,stridor:1,mech_assault:1,mech_moto:0.5,no_helmet:0.5,spo2_lt94:0.5,gcs_lt15:0.3,
+    face_burn:-1},
+ rf:['air_obst','stridor','airway_blood','spo2_lt90'],
+ dx:['Airway first: blood, teeth, mobile midface (Le Fort), bilateral mandible fracture → tongue falls back','CT face / head / C-spine when the airway is secure; eye exam (visual acuity, proptosis, tense orbit – retrobulbar hematoma)'],
+ dxs:TR_SRC+' · AO CMF (intl)',
+ tx:['Sit up / lean forward if spine cleared or awake and protecting airway; suction; jaw thrust; avoid nasal tubes (basal skull / midface fracture)','Early definitive airway by the most experienced operator, double set-up for surgical airway (cricothyroidotomy) if CICO',
+     'Bleeding: anterior / posterior nasal packing, balloon tamponade; TXA if significant bleeding ≤ 3 h [V]; retrobulbar hematoma → lateral canthotomy and cantholysis'],
+ txs:TR_SRC+' · Difficult Airway Society 2015 (intl)',
+ dispo:'Admit / OR (ENT, OMFS, ophthalmology); transfer after airway secured if no specialist.', dps:TR_SRC,
+ tk:['faceneck','facial fracture airway','Face & neck trauma'], tkx:[['failed','Failed airway / CICO',4],['eye','Eye emergencies',19]]},
+{id:'tr_neck', n:'Penetrating neck injury', sec:21, topic:'Trauma to the neck', mnm:1, p:-0.5, tr:1,
+ g:['neck_pen','neck_hard','dysphagia'],
+ w:{neck_pen:4,neck_hard:3.5,dysphagia:1.5,stridor:1,voice_change:1,subq_emph:1,mech_stab:0.5,mech_gsw:0.5,sbp_lt90:0.5,lateralizing:1,air_threat:0.5},
+ rf:['neck_hard','stridor','sbp_lt90','lateralizing'],
+ dx:['Hard signs (expanding / pulsatile hematoma, active bleeding, bruit / thrill, air bubbling through wound, airway compromise, shock, neuro deficit) → OR, no imaging delay','No hard signs → CT angiography of the neck ("no-zone" approach; zones I–III still describe the wound and surgical exposure)','Do not probe or locally explore the wound in the ED; check for aerodigestive injury (endoscopy / contrast swallow)'],
+ dxs:'EAST 2018 / WTA 2013 penetrating neck injury (intl) · '+TR_SRC,
+ tx:['Early airway (expanding hematoma distorts anatomy) – RSI with surgical back-up; cricothyroidotomy if needed','Direct pressure; Foley balloon tamponade into the wound tract for bleeding not controlled by pressure; occlusive dressing (venous air embolism), patient head-down if air embolism suspected',
+     'No NG tube; tetanus [V]; antibiotics if aerodigestive injury: ampicillin-sulbactam 3 g IV [V]'],
+ txs:'EAST 2018 / WTA 2013 (intl) · '+TR_SRC,
+ dispo:'OR / ICU. No vascular / ENT surgeon → stabilise airway + bleeding, transfer to trauma centre.', dps:TR_SRC+' · '+TR_PH,
+ tk:['faceneck','penetrating neck zones','Face & neck trauma (zones, hard signs)']},
+{id:'tr_renal', n:'Renal injury', sec:21, topic:'Flank & genitourinary trauma', mnm:0, p:-0.5, tr:1,
+ g:['flank_ecchy','hematuria'],
+ w:{flank_ecchy:2.5,hematuria:2.5,flank_pain:1,chest_wall:0.5,abd_pen:1,mech_fall:0.5,blunt:0.3,sbp_lt90:0.5,
+    blood_meatus:-0.5},
+ rf:['sbp_lt90'],
+ dx:['CT abdomen/pelvis with IV contrast + delayed (excretory) phase for gross hematuria, microscopic hematuria with shock, or significant deceleration / flank injury','Urinalysis; creatinine; children: lower threshold (> 50 RBC/hpf)'],
+ dxs:'AUA Urotrauma 2020 · EAU 2024 (intl)',
+ tx:['Most are managed non-operatively (bed rest, serial Hb); angio-embolisation for active bleeding','Hemodynamic instability despite resuscitation → OR / IR; '+MTP_TX],
+ txs:'AUA 2020 (intl)',
+ dispo:'Admit (urology / surgery).', dps:'AUA 2020 (intl)',
+ tk:['abdgu','renal injury','Abdominal, flank & GU trauma']},
+{id:'tr_lowergu', n:'Bladder / urethral injury', sec:21, topic:'Genitourinary trauma', mnm:0, p:-0.5, tr:1,
+ g:['blood_meatus','perineal','high_prostate','unable_void','hematuria'],
+ w:{blood_meatus:3.5,perineal:2,high_prostate:2.5,unable_void:2,hematuria:1.5,pelvic_unstable:1.5,pelvic_pain:0.5,male:0.5,abd_tender_tr:0.3},
+ rf:['blood_meatus'],
+ dx:['Blood at the meatus / perineal hematoma / high-riding prostate → retrograde urethrogram BEFORE any catheter','Pelvic fracture + gross hematuria → CT cystogram (retrograde fill ≥ 300–350 mL contrast) [V]'],
+ dxs:'AUA Urotrauma 2020 · EAU 2024 (intl)',
+ tx:['Suspected urethral injury: no blind catheter – urology; suprapubic catheter if retention','Intraperitoneal bladder rupture → surgical repair; extraperitoneal → catheter drainage (most)'],
+ txs:'AUA 2020 (intl)',
+ dispo:'Admit urology / surgery.', dps:'AUA 2020 (intl)',
+ tk:['abdgu','urethral injury','Abdominal, flank & GU trauma']},
+{id:'tr_vasc', n:'Extremity vascular injury', sec:21, topic:'Penetrating trauma to the extremities', mnm:1, p:-0.5, tr:1,
+ g:['hard_vasc','soft_vasc','ext_hemorrhage'],
+ w:{hard_vasc:4.5,soft_vasc:2,ext_hemorrhage:2,penetrating:1,mech_stab:0.5,mech_gsw:1,long_bone:0.5,sbp_lt90:0.5,
+    comp_pain:0.3},
+ rf:['hard_vasc','ext_hemorrhage','sbp_lt90'],
+ dx:['Hard signs → OR / on-table angiography, no CT delay','Soft signs → ankle–brachial / arterial pressure index (API < 0.9 → CT angiography)','Neuro exam; knee dislocation always needs vascular assessment (ABI / CTA)'],
+ dxs:'EAST 2012 penetrating lower extremity · WTA 2016 (intl) · '+TR_SRC,
+ tx:['Direct pressure, then tourniquet high and tight for life-threatening limb bleeding (note the time); junctional: wound packing with hemostatic gauze','Restore perfusion within ~ 6 h of warm ischemia; '+TXA_TX,'Tetanus [V]; antibiotics for associated open fracture [V]'],
+ txs:'EAST 2012 / WTA (intl) · Stop the Bleed / '+TR_SRC,
+ dispo:'Vascular surgery / OR; transfer early if no vascular surgeon (tourniquet time counts).', dps:TR_SRC+' · '+TR_PH,
+ tk:['abcde','tourniquet','Primary survey (hemorrhage control)',21], tkx:[['orthoeval','Orthopedic injury basics',22],['txa','TXA',21]]},
+{id:'tr_compart', n:'Acute compartment syndrome', sec:22, topic:'Compartment syndrome', mnm:1, p:-0.5, tr:1,
+ g:['comp_pain','comp_tense','crush_long'],
+ w:{comp_pain:3.5,comp_tense:3,crush_long:1.5,long_bone:1,mech_crush:1,paresthesia:0.5,burn_circ:1,
+    hard_vasc:-0.5},
+ rf:['comp_pain','comp_tense'],
+ dx:['Clinical: pain out of proportion and pain on passive stretch are early; pulselessness and paralysis are late','Compartment pressure measurement if unclear or the patient cannot report pain: ΔP (diastolic BP − compartment pressure) ≤ 30 mmHg supports diagnosis','CK, creatinine, K⁺, urine myoglobin'],
+ dxs:'BOAST 2016 (intl) · McQueen 1996 (intl)',
+ tx:['Remove / split casts and dressings to skin; limb at heart level (not elevated); treat hypotension; O₂','Emergency fasciotomy (orthopedic / general surgery) – do not delay for imaging','Analgesia titrated – but rising analgesic need is itself a warning sign [V]'],
+ txs:'BOAST 2016 (intl)',
+ dispo:'OR for fasciotomy; transfer immediately if no surgeon.', dps:'BOAST 2016 (intl)',
+ tk:['compart','compartment syndrome','Compartment syndrome',22], tkx:[['blast','Crush injuries',2]]},
+{id:'tr_openfx', n:'Open fracture', sec:22, topic:'Initial evaluation of orthopedic injuries', mnm:0, p:0, tr:1,
+ g:['open_fx'],
+ w:{open_fx:5,long_bone:1,contaminated:0.5,mech_moto:0.3,mech_gsw:0.5},
+ rf:['hard_vasc','comp_pain'],
+ dx:['Document neurovascular status before and after splinting; photograph the wound then cover it','X-ray (joint above and below); Gustilo–Anderson grading is finalised in the OR'],
+ dxs:'BOAST 2017 open fractures (intl) · '+TR_SRC,
+ tx:['IV antibiotics within 1 h: cefazolin 2 g IV q8h (3 g if ≥ 120 kg; child 30 mg/kg, max 2 g) [V]; Gustilo III: add gentamicin 5 mg/kg IV daily [V]; farm / soil / floodwater contamination: add penicillin G or metronidazole [V]; severe β-lactam allergy: clindamycin 900 mg IV [V]',
+     'Tetanus: Td/Tdap 0.5 mL IM if not up to date; tetanus immune globulin 250 IU IM if < 3 or unknown doses [V] (equine antitoxin after sensitivity test where human TIG unavailable – PH [V])','Realign and splint; remove gross contamination; saline-moist sterile dressing; analgesia [V]; debridement in the OR (ideally within 12–24 h)'],
+ txs:'EAST 2011 open fracture antibiotics · BOAST 2017 · ACIP tetanus (intl) · DOH (PH)',
+ dispo:'Admit orthopedics for debridement / fixation.', dps:'BOAST 2017 (intl)',
+ tk:['orthoeval','open fracture','Orthopedic injury basics (open fracture)',22], tkx:[['tetanus','Tetanus prophylaxis',6]]},
+{id:'tr_crush', n:'Crush injury / traumatic rhabdomyolysis', sec:2, topic:'Crush injury (disaster) · rhabdomyolysis', mnm:1, p:-0.5, tr:1,
+ g:['mech_crush','crush_long','dark_urine'],
+ w:{mech_crush:2.5,crush_long:3,dark_urine:2,oliguria:1,comp_tense:0.5,cr_high:1,acidosis:0.5,long_bone:0.3},
+ rf:['dark_urine','oliguria','cr_high'],
+ dx:['CK (> 5× ULN; often > 10 000), K⁺, creatinine, Ca²⁺, phosphate, VBG, urine dip (blood + without RBCs = myoglobin)','ECG immediately (hyperkalemia on release of the crushed limb)','Look for compartment syndrome'],
+ dxs:'ISN Renal Disaster Relief Task Force 2012 crush syndrome recommendations (intl)',
+ tx:['Start IV isotonic saline before / during extrication if possible: ~ 1 L/h initially (adults), then titrate to urine output ~ 200–300 mL/h; watch for overload in older adults [V]',
+     'Hyperkalemia: calcium gluconate 10 % 30 mL IV (or CaCl₂ 10 mL) [V]; insulin 10 U IV + dextrose 25 g [V]; salbutamol 10–20 mg nebulised [V]; dialysis if refractory','Routine bicarbonate / mannitol not proven; treat compartment syndrome; tetanus [V]'],
+ txs:'ISN RDRTF 2012 (intl) · '+TR_SRC,
+ dispo:'Admit (ICU / dialysis-capable hospital). Mass casualty (earthquake, collapse): DOH-HEMS referral to dialysis-capable centres.', dps:'ISN 2012 (intl) · DOH AO 2014-0007 (PH)',
+ tk:['blast','crush syndrome','Bomb, blast & crush injuries',2], tkx:[['natdis','Earthquake crush syndrome',2],['rnhyperk','Hyperkalemia',10]]},
+{id:'tr_burn', n:'Major burn (see Parkland/ATLS fluid in Scores)', sec:16, topic:'Thermal burns', mnm:1, p:0, tr:1,
+ g:['mech_burn','tbsa_ge10','burn_full','burn_circ','burn_special','face_burn'],
+ w:{mech_burn:3,tbsa_ge10:2,tbsa_ge20:1.5,burn_full:1.5,burn_circ:1,burn_special:1,burn_elec:0.5,face_burn:0.5,hr_gt100:0.3},
+ rf:['tbsa_ge20','burn_circ','face_burn','burn_elec'],
+ dx:['Estimate %TBSA (rule of nines; patient palm + fingers ≈ 1 %; Lund–Browder in children) – count partial + full thickness only','Look for inhalation injury, CO / cyanide (enclosed fire), associated trauma (explosion, fall); ECG + CK in electrical injury','Urine output monitoring (catheter), VBG, lactate, carboxyhemoglobin if available'],
+ dxs:TR_SRC+' · ABA 2023 burn resuscitation CPG (intl)',
+ tx:['Stop the burning; cool small burns with running water 20 min (within 3 h); remove jewellery; keep the patient warm','≥ 20 % TBSA adult (≥ 10 % child): warmed Lactated Ringer’s – start 2 mL/kg/%TBSA adult, 3 mL/kg/%TBSA child, 4 mL/kg/%TBSA electrical over 24 h, half in the first 8 h from the time of burn [V]; titrate to urine output 0.5 mL/kg/h adult, 1 mL/kg/h child < 30 kg [V]; children also get maintenance dextrose fluid',
+     'Analgesia: IV opioid titrated (morphine 0.1 mg/kg or fentanyl 1 mcg/kg) [V]; escharotomy for circumferential burns impairing ventilation / perfusion','Tetanus: Td/Tdap ± tetanus immune globulin 250 IU IM [V]; clean, cover with cling film / non-adherent dressing; no prophylactic systemic antibiotics'],
+ txs:TR_SRC+' · ABA 2023 CPG (intl) · ISBI 2016 (intl)',
+ dispo:'Burn-centre referral: partial-thickness ≥ 10 % TBSA, any full-thickness, face / hands / feet / genitalia / perineum / major joints, electrical / chemical / inhalation injury, circumferential, children, significant comorbidity (DOH burn centres per DO 2021-0001).', dps:'ABA burn referral guidelines 2022 (intl) · '+TR_PH,
+ tk:['burns','Parkland','Burns – Parkland / ATLS fluid',21], tkx:[['tetanus','Tetanus prophylaxis',6],['elec','Electrical injury',16]]},
+{id:'tr_inhal', n:'Inhalation injury / airway burn (± CO / cyanide)', sec:16, topic:'Thermal burns · smoke inhalation', mnm:1, p:-0.5, tr:1,
+ g:['face_burn','burn_enclosed','voice_change'],
+ w:{face_burn:3,burn_enclosed:2.5,voice_change:2,stridor:2,air_threat:1,dyspnea:0.5,spo2_lt94:0.5,gcs_lt15:0.5,mech_burn:0.5,lactate_4:0.5},
+ rf:['stridor','voice_change','gcs_lt15'],
+ dx:['Clinical: facial burns, singed nasal hair, soot in mouth, carbonaceous sputum, hoarseness, stridor – airway swelling worsens over hours','Carboxyhemoglobin (pulse oximetry is falsely normal), lactate (≥ 8 mmol/L suggests cyanide), ABG; fibre-optic airway assessment if available'],
+ dxs:TR_SRC+' · ABA 2023 (intl)',
+ tx:['Early intubation by the most experienced operator if stridor, hoarseness, deep facial / circumferential neck burns, or long transfer – use a large tube (≥ 7.5–8.0 adult) [V]','100 % O₂ by non-rebreather for CO until COHb normal; hyperbaric O₂ referral per criteria',
+     'Suspected cyanide (enclosed-space fire + shock / lactate ≥ 8): hydroxocobalamin 5 g IV over 15 min (70 mg/kg child) [V] – limited availability in PH'],
+ txs:TR_SRC+' · ABA 2023 · Undersea & Hyperbaric Medical Society (intl)',
+ dispo:'ICU / burn centre; never transfer an at-risk airway unprotected.', dps:'ABA referral guidelines 2022 (intl) · '+TR_PH,
+ tk:['burns','inhalation injury','Burns – Parkland / ATLS fluid',21], tkx:[['co','Carbon monoxide',16],['rsicheck','RSI checklist',4]]},
+{id:'tr_preg', n:'Trauma in pregnancy – placental abruption / uterine injury', sec:21, topic:'Trauma in pregnancy', mnm:1, p:-0.5, tr:1,
+ g:['pregnant','uterine_tender','fhr_abn'],
+ w:{pregnant:1.5,ga_ge20:1,uterine_tender:3,fhr_abn:3,vag_bleed:2,rom:1,abd_pain:1,abd_tender_tr:1,seatbelt:1,mech_mvc:0.5,mech_moto:0.5,mech_assault:0.5,sbp_lt90:0.5},
+ rf:['fhr_abn','vag_bleed','sbp_lt90'],
+ dx:['Primary survey of the mother first (best fetal resuscitation); fundus at the umbilicus ≈ 20 wk','Cardiotocography ≥ 4–6 h if ≥ 20–24 wk (abruption can be delayed; ultrasound misses many abruptions)','Rh type, Kleihauer–Betke if Rh-negative; FAST; CT if indicated – do not withhold needed imaging for fetal concern'],
+ dxs:'SOGC 2015 trauma in pregnancy · ACOG (intl) · '+TR_SRC,
+ tx:['Left uterine displacement (manual) or 15–30° left tilt keeping spinal precautions; O₂; large-bore IV; avoid vasopressors before volume','Rh-negative mother: anti-D immunoglobulin 300 mcg IM within 72 h [V]; tetanus Tdap is safe [V]',
+     'Maternal arrest ≥ 20 wk: resuscitative hysterotomy (peri-mortem cesarean) by 4–5 min; '+TXA_TX],
+ txs:'SOGC 2015 · ACOG (intl) · AHA 2020 maternal arrest (intl)',
+ dispo:'≥ 20–24 wk: obstetric unit with fetal monitoring (minimum 4–6 h); abruption / fetal distress → emergency cesarean.', dps:'SOGC 2015 (intl) · '+TR_PH,
+ tk:['obother','trauma in pregnancy','Other obstetric emergencies (trauma in pregnancy)',11], tkx:[['obarrest','Maternal cardiac arrest',11]]},
+{id:'tr_geri', n:'Geriatric trauma (occult shock, frailty, anticoagulation)', sec:21, topic:'Trauma in older adults', mnm:1, p:-1, tr:1,
+ g:['age_ge65'],
+ w:{age_ge65:2,m_anticoag:1,m_antiplt:0.5,m_bb:0.5,sbp_lt110:1,mech_fall_low:1,chest_wall:0.5,head_inj:0.3,confusion:0.3},
+ rf:['m_anticoag','sbp_lt110'],
+ dx:['Low threshold for CT head and C-spine after ground-level falls; lactate / base deficit for occult hypoperfusion','Why did they fall? ECG, glucose, infection screen, medications (β-blockers, sedatives), syncope; screen for elder abuse'],
+ dxs:'EAST 2012 geriatric trauma (intl) · ACS TQIP geriatric guideline (intl) · '+TR_SRC,
+ tx:['Treat SBP < 110 and HR > 90 as possible shock; early blood rather than large crystalloid volumes','Reverse anticoagulants early if bleeding (see Anticoagulant reversal) [V]; rib fractures: multimodal analgesia + early block [V]','Delirium prevention, early mobilisation, early goals-of-care discussion'],
+ txs:'EAST 2012 · ACS TQIP (intl)',
+ dispo:'Low threshold to admit (≥ 3 rib fractures, anticoagulated head injury); trauma-centre triage threshold lower (SBP < 110 at ≥ 65 y).', dps:'ACS 2021 field triage (intl) · '+TR_PH,
+ tk:['oldtrauma','geriatric trauma','Trauma in older adults',21], tkx:[['reversal','Anticoagulant reversal',18],['elderabuse','Elder abuse',25]]},
+{id:'tr_peds', n:'Pediatric trauma (basics – weight-based)', sec:21, topic:'Trauma in children', mnm:1, p:-1, tr:1,
+ g:['age_lt16'],
+ w:{age_lt16:2,head_inj:0.5,not_normal:1,hr_ge125:0.5,mech_fall:0.5,mech_ped:0.5,cool_periph:0.5,fast_abd:0.3},
+ rf:['cool_periph','not_normal'],
+ dx:['Weight: Broselow tape or APLS estimate; age-specific vital signs – hypotension is a late sign (SBP < 70 + 2 × age in years)','PECARN head rule (see Scores); minimise CT radiation (ALARA); FAST has low sensitivity in children','Look for non-accidental injury when history does not fit (TEN-4-FACESp, skeletal survey)'],
+ dxs:'Kuppermann 2009 PECARN (intl) · APLS 7th ed (intl) · '+TR_SRC,
+ tx:['Crystalloid bolus 10–20 mL/kg warmed, then blood early: pRBC 10–20 mL/kg (MTP aliquots) [V]','TXA 15 mg/kg IV (max 1 g) over 10 min, then 2 mg/kg/h × 8 h if bleeding and ≤ 3 h [V]',
+     'Solid organ injuries: non-operative management in stable children; analgesia: fentanyl 1–1.5 mcg/kg intranasal [V]'],
+ txs:'APLS 7th ed · ATLS (intl) · PECARN (intl)',
+ dispo:'Pediatric-capable trauma centre for major trauma; report suspected abuse (RA 7610 – WCPU).', dps:'RA 7610 (PH) · '+TR_SRC,
+ tk:['pecarnhead','pediatric head injury','PECARN head rule',12], tkx:[['apls','Peds weight from age',12],['childabuse','Child maltreatment (pediatric emergencies)',12]]},
+{id:'tr_drown', n:'Drowning (submersion injury)', sec:16, topic:'Drowning', mnm:1, p:-0.5, tr:1,
+ g:['mech_drown'],
+ w:{mech_drown:5,spo2_lt94:1,cough:0.5,dyspnea:0.5,crackles_bilat:1,gcs_lt15:0.5,t_lt35:0.5,mech_axial:0.5},
+ rf:['spo2_lt90','gcs_lt15','t_lt35'],
+ dx:['SpO₂, ABG, CXR (may lag); glucose, electrolytes, core temperature','C-spine imaging only if diving, signs of injury or high-energy mechanism; ECG (why did they drown – seizure, arrhythmia, intoxication?)'],
+ dxs:'ILCOR/ERC 2021 drowning · WMS 2019 drowning CPG (intl)',
+ tx:['Oxygenation first: 5 rescue breaths in arrest (ventilation-focused CPR); high-flow O₂, CPAP / PEEP for hypoxemia, intubate if failing','Rewarm if hypothermic; no routine antibiotics or steroids; no Heimlich / abdominal thrusts'],
+ txs:'ERC 2021 · WMS 2019 (intl)',
+ dispo:'Asymptomatic with normal SpO₂ and exam → observe 4–6 h then discharge; any hypoxemia / symptoms → admit.', dps:'WMS 2019 (intl)',
+ tk:['drown','drowning','Drowning',16]}
+);
+// in trauma mode, steer away from the non-traumatic duplicates (the trauma entries carry the trauma-specific plan)
+[['sah',-2],['stroke',-1.5],['aaa',-2],['dissection',-1.5],['htnemerg',-1.5],['pericarditis',-2],['ectopic',-1],['migraine',-2],['brady',-2],['sepsis',-3],['meningitis',-2.5],
+ ['stone',-2],['pe',-1.5],['ahf',-1.5],['age',-2],['pyelo',-1.5],['cystitis',-1.5],['panic',-2],['viral',-1.5]].forEach(([id,w])=>{ const c=KB.find(x=>x.id===id); if(c) c.w.trauma=w; });
+// non-traumatic duplicates are replaced by their trauma entry in trauma context (shown under "Excluded by hard rules")
+const TR_DUP = {tamponade:'Cardiac tamponade (traumatic)', ptx:'Tension / open pneumothorax (traumatic)'};
+Object.entries(TR_DUP).forEach(([id,by])=>{ const c=KB.find(x=>x.id===id); if(!c) return; const ex0=c.ex; c.ex = S => (S.trauma ? 'trauma context – see '+by : null) || (ex0 ? ex0(S) : null); });
+// a confirmed pregnancy ≥ 20 wk rules out ectopic pregnancy / miscarriage as the working diagnosis
+['ectopic','miscarriage'].forEach(id=>{ const c=KB.find(x=>x.id===id); if(!c) return; const ex0=c.ex; c.ex = S => (S.pregnant && S.ga!=null && S.ga>=20 ? 'confirmed pregnancy ≥ 20 wk' : null) || (ex0 ? ex0(S) : null); });
+Object.assign(TK_SEC, {1:'S1 Prehospital',2:'S2 Disaster',4:'S4 Resuscitative procedures',6:'S6 Wound management',18:'S18 Hematology & Oncology',21:'S21 Trauma',22:'S22 Orthopedics',25:'S25 Abuse & Assault'});
 
 </script>
 <script>
@@ -1098,10 +1587,12 @@ const CC_MAP = {
   'Diarrhea / vomiting':['diarrhea','vomiting'], 'Cough':['cough'], 'Palpitations':['palpitations'], 'Vaginal bleeding':['vag_bleed'], 'Flank pain':['flank_pain'],
   'Dysuria / urinary symptoms':['dysuria'], 'Vomiting blood / melena':['hematemesis'], 'Rectal bleeding':['hematochezia'], 'Allergic reaction':['urticaria'],
   'Poisoning / overdose':['overdose'], 'Snakebite':['snake_bite'], 'Animal bite':['animal_bite'], 'Sore throat':['sore_throat'], 'Jaundice':['jaundice'],
-  'Leg swelling':['dvt_signs'], 'Dizziness / vertigo':['dizziness'], 'High blood sugar':['polyuria'], 'Rash':['rash'], 'Scrotal pain':['testis_pain'], 'Joint pain / swelling':['hot_joint']
+  'Leg swelling':['dvt_signs'], 'Dizziness / vertigo':['dizziness'], 'High blood sugar':['polyuria'], 'Rash':['rash'], 'Scrotal pain':['testis_pain'], 'Joint pain / swelling':['hot_joint'],
+  'Trauma / injury':['trauma']
 };
 const num = v => (v===''||v==null||isNaN(+v)) ? null : +v;
 
+const TR_MECH = ['mech_mvc','mech_moto','mech_ped','mech_hienergy','mech_fall','mech_fall_low','mech_axial','mech_assault','mech_stab','mech_gsw','mech_burn','burn_elec','mech_crush','mech_drown','head_inj','no_helmet'];
 // ---------- free-text extraction ----------
 const LEXRE = LEX.map(([src,ids]) => [new RegExp('(?:^|[^a-z\\u00f1])('+src+')(?=$|[^a-z\\u00f1])','gi'), ids, src]);
 const TL_NUM = {isang:1,isa:1,dalawang:2,dalawa:2,tatlong:3,tatlo:3,'apat na':4,apat:4,limang:5,lima:5,'anim na':6,anim:6,pitong:7,pito:7,one:1,two:2,three:3,four:4,five:5,six:6,seven:7,ten:10};
@@ -1127,9 +1618,17 @@ function extract(text){
   if(dm){ const n = isNaN(+dm[1]) ? TL_NUM[dm[1]] : +dm[1]; const u = /^(araw|day|days|d)$/.test(dm[2])?'d':/^(linggo|week|weeks|wk|wks)$/.test(dm[2])?'wk':'h'; duration={n,u,term:dm[0]}; }
   else { const rm = t.match(/\b(kahapon|kagabi|yesterday|last night|kaninang umaga|kanina|this morning|earlier today|noong isang linggo|last week)\b/);
     if(rm){ const k=rm[1]; duration = /kahapon|kagabi|yesterday|last night/.test(k)?{n:1,u:'d',term:k}:/linggo|week/.test(k)?{n:1,u:'wk',term:k}:{n:6,u:'h',term:k}; } }
+  // trauma: fall height (m) and time since injury in minutes
+  let fallM=null, injH=null;
+  if(/nahulog|nalaglag|bumagsak|fell|fall|fallen/.test(t)){
+    const fm = t.match(/(\d+(?:\.\d+)?)\s*(m|meters?|metres?|metro|ft|feet|foot|talampakan)\b/);
+    if(fm) fallM = /^(ft|feet|foot|talampakan)$/.test(fm[2]) ? +fm[1]*0.3048 : +fm[1];
+    else { const fs = t.match(/\b(2nd|second|ikalawang|3rd|third|ikatlong|4th|fourth|ikaapat na)\s*(floor|storey|story|palapag)/); if(fs) fallM = (/2nd|second|ikalawang/.test(fs[1])?1:/3rd|third|ikatlong/.test(fs[1])?2:3)*3; }
+  }
+  const im = t.match(/(\d+)\s*(min|mins|minutes?|minuto)\b/); if(im) injH = +im[1]/60;
   // de-duplicate hits by term
   const seen=new Set(); const uh=[]; hits.forEach(h=>{const k=h.term+'|'+h.neg; if(!seen.has(k)){seen.add(k); uh.push(h);} });
-  return {hits:uh, f:byId, duration};
+  return {hits:uh, f:byId, duration, fallM, injH};
 }
 
 // ---------- derive the finding map from raw input ----------
@@ -1159,7 +1658,10 @@ function derive(I){
   if(durH!=null){ dv('dur_lt24h',durH<24,1); dv('dur_le7d',durH<=168,1); dv('dur_gt7d',durH>168,1); dv('dur_ge14d',durH>=336,1); }
   const fd = num(I.feverDay); if(fd!=null) dv('fever_d3_7', fd>=3&&fd<=7, 1);
   // vitals
-  const hr=num(v.hr), sbp=num(v.sbp), dbp=num(v.dbp), rr=num(v.rr), T=num(v.t), sp=num(v.spo2), gcs=num(v.gcs);
+  const tr = I.tr||{};
+  let gcs=num(v.gcs); const gE=num(tr.gcsE), gV=num(tr.gcsV), gM=num(tr.gcsM);
+  if(gcs==null && gE!=null && gV!=null && gM!=null) gcs = gE+gV+gM;
+  const hr=num(v.hr), sbp=num(v.sbp), dbp=num(v.dbp), rr=num(v.rr), T=num(v.t), sp=num(v.spo2);
   let glu=num(v.glu); if(glu!=null && v.gluU==='mmol') glu = glu*18;
   if(hr!=null){ dv('hr_gt100',hr>100,1); dv('hr_ge125',hr>=125,1); dv('hr_lt60',hr<60,1); }
   if(sbp!=null){ dv('sbp_lt90',sbp<90,1); dv('sbp_le100',sbp<=100,1); }
@@ -1182,13 +1684,45 @@ function derive(I){
   if(ureaMmol!=null) dv('urea_high', ureaMmol>7, 1);
   if(lac!=null){ dv('lactate_high',lac>=2,1); dv('lactate_4',lac>=4,1); }
   if(F.fever===1||F.t_ge38===1) F.fever_any=1;
-  return {F, SRC, ex, ctx:{age, sex, pregnant, ga, f:F}, n:{age,hr,sbp,dbp,rr,T,sp,gcs,glu,wbc,neut,plt,lac,ureaMmol,o2:!!v.o2,durH,fd}};
+  // ---------- trauma ----------
+  if(T!=null) dv('t_lt35',T<35,1);
+  if(sbp!=null) dv('sbp_lt110',sbp<110,1);
+  if(hr!=null) dv('hr_ge120',hr>=120,1);
+  if(tr.on) set('trauma',1,'mode',F.trauma!==1);
+  if(TR_MECH.some(id=>F[id]===1) && F.trauma!==1) set('trauma',1,'derived',true);
+  const trauma = F.trauma===1;
+  let injH=null, fallM=null, tbsa=null, wt=num(tr.wt), bd=num(tr.bd);
+  if(trauma){
+    const yes=id=>F[id]===1, pos=(id,src)=>{ if(F[id]==null) set(id,1,src||'derived'); };
+    if(['mech_stab','mech_gsw','chest_pen','abd_pen','neck_pen'].some(yes)) pos('penetrating');
+    if(['mech_mvc','mech_moto','mech_ped','mech_fall','mech_fall_low','mech_assault','mech_crush','mech_hienergy','mech_axial'].some(yes)) pos('blunt');
+    fallM = num(tr.fallM); if(fallM==null) fallM = ex.fallM;
+    if(fallM!=null){ dv('fall_ge1m',fallM>=0.9,1); dv('fall_ge3m',fallM>=3,1); if(fallM>0) pos('mech_fall'); }
+    if(yes('fall_ge3m')) pos('fall_ge1m');
+    if(tr.air==='patent'){ dv('air_threat',false,1); dv('air_obst',false,1); } else if(tr.air==='threat') dv('air_threat',true,1); else if(tr.air==='obst'){ dv('air_obst',true,1); dv('air_threat',true,1); }
+    if(tr.bs==='equal') dv('dec_bs_uni',false,1); else if(tr.bs==='L'||tr.bs==='R') dv('dec_bs_uni',true,1); else if(tr.bs==='both') dv('dec_bs_bil',true,1);
+    if(tr.pup==='equal'){ dv('pupil_uni',false,1); dv('pupil_bil',false,1); } else if(tr.pup==='uni') dv('pupil_uni',true,1); else if(tr.pup==='bil') dv('pupil_bil',true,1); else if(tr.pup==='pin') dv('miosis',true,1);
+    if(gcs!=null){ dv('gcs_9_12',gcs>=9&&gcs<=12,1); dv('gcs_13_15',gcs>=13,1); dv('gcs_lt13',gcs<13,1); }
+    const iT=num(tr.injT); if(iT!=null) injH = iT/(tr.injU==='min'?60:1); else if(ex.injH!=null) injH=ex.injH; else if(durH!=null && durH<=72) injH=durH;
+    if(injH!=null){ dv('inj_le3h',injH<=3,1); dv('inj_gt3h',injH>3,1); }
+    tbsa=num(tr.tbsa); if(tbsa!=null){ dv('tbsa_ge10',tbsa>=10,1); dv('tbsa_ge20',tbsa>=20,1); if(tbsa>0) pos('mech_burn'); }
+    if(bd!=null){ bd=Math.abs(bd); dv('bd_ge6',bd>=6,1); }
+    if(yes('fast_abd')) pos('us_fluid'); if(yes('fast_peri')) pos('us_effusion'); if(yes('fast_ptx')) pos('cxr_ptx'); if(yes('fast_htx')) pos('cxr_htx');
+    if(yes('fast_neg')){ if(F.us_fluid==null) set('us_fluid',-1,'derived'); if(F.us_effusion==null) set('us_effusion',-1,'derived'); }
+    if(yes('helmet') && F.no_helmet==null) set('no_helmet',-1,'derived');
+    if(yes('syncope')) pos('loc'); if(yes('hemiparesis')) pos('lateralizing'); if(yes('chest_pen')||yes('box_wound')) pos('penetrating');
+    if(yes('box_wound')) pos('chest_pen'); if(yes('femur_fx')||yes('open_fx')) pos('long_bone');
+    if(['long_bone','open_fx','femur_fx','burn_full','tbsa_ge10'].some(yes)) pos('distract');
+    if(yes('vomit2')) pos('vomiting'); if(yes('mech_burn')&&yes('burn_enclosed')) pos('trauma');
+  }
+  return {F, SRC, ex, ctx:{age, sex, pregnant, ga, trauma, f:F}, n:{age,hr,sbp,dbp,rr,T,sp,gcs,glu,wbc,neut,plt,lac,ureaMmol,o2:!!v.o2,durH,fd, injH, fallM, tbsa, wt, bd, gE, gV, gM, trOn:!!tr.on}};
 }
 
 // ---------- score every condition ----------
 function scoreAll(D){
   const F = D.F, out = [], excluded = [];
   for(const c of KB){
+    if(c.tr && F.trauma!==1) continue;            // trauma conditions only in trauma context
     const considered = c.g.some(id => F[id]===1);
     if(!considered) continue;
     const exr = c.ex ? c.ex(D.ctx) : null;
@@ -1199,6 +1733,13 @@ function scoreAll(D){
     const notes=[];
     if(c.id==='hypogly' && D.n.glu==null && (F.confusion===1||F.seizure===1||F.gcs_lt15===1)){ s+=1.5; pro.push({id:'glu_unk',w:1.5,l:'Glucose not entered with altered mentation'}); notes.push('Check capillary glucose now.'); }
     if(c.id==='sepsis'){ const q=qsofa(D); if(q.v>=2){ s+=1; pro.push({id:'qsofa',w:1,l:'qSOFA ≥ 2'}); } }
+    if(c.tr){
+      if((c.id==='tr_cspine'||c.id==='tr_tlspine') && F.sbp_lt90===1 && F.hr_lt60===1){ s+=1.5; pro.push({id:'neuroshock',w:1.5,l:'Hypotension with bradycardia (neurogenic shock?)'}); }
+      if(c.id==='tr_tension' && F.dec_bs_uni===1 && (F.hyperres===1||F.trach_dev===1) && (F.sbp_lt90===1||F.spo2_lt90===1)){ s+=1.5; pro.push({id:'tension',w:1.5,l:'↓ breath sounds + hyperresonance/deviation + shock/hypoxia'}); }
+      if(c.id==='tr_tamponade' && F.muffled===1 && F.jvd===1 && F.sbp_lt90===1){ s+=1; pro.push({id:'beck',w:1,l:'Beck triad'}); }
+      if(['tr_edh','tr_sdh','tr_tbi'].includes(c.id) && D.n.gcs!=null) notes.push('TBI severity by GCS '+D.n.gcs+': '+tbiCat(D.n.gcs)+'.');
+      if(c.id==='tr_shock'){ const k=atlsClass(D); if(k.cls) notes.push('Estimated ATLS hemorrhage class '+k.cls+' ('+k.loss+' blood volume) – see Scores.'); }
+    }
     pro.sort((a,b)=>b.w-a.w); con.sort((a,b)=>a.w-b.w);
     const red = (c.rf||[]).filter(id=>F[id]===1).map(id=>FLABEL[id]);
     const ask = Object.entries(c.w).filter(([id,w])=>w>=2 && F[id]==null && FGROUP_OF[id]).sort((a,b)=>b[1]-a[1]).slice(0,4).map(([id])=>FLABEL[id]);
@@ -1232,7 +1773,7 @@ function computeScores(D, R){
     if(n.T==null) miss.push('Temp'); else p('t', n.T<=35?3:n.T<=36?1:n.T<=38?0:n.T<=39?1:2);
     if(miss.length<6) add({id:'news2', name:'NEWS2', v, max:20, miss, interp: v>=7?'High clinical risk – emergency assessment':v>=5?'Medium risk – urgent review':red3?'Low–medium (single parameter = 3)':'Low risk', lvl:v>=7?3:v>=5?2:red3?1:0, src:'RCP 2017 (intl)'}); }
   // shock index
-  if(n.hr!=null&&n.sbp) { const si=Math.round(n.hr/n.sbp*100)/100; add({id:'si', name:'Shock index', v:si, interp: si>=1?'≥ 1.0 – occult shock / high risk':si>=0.7?'0.7–0.99 – borderline':'< 0.7 normal', lvl:si>=1?3:si>=0.7?1:0, src:'HR/SBP'}); }
+  if(n.hr!=null&&n.sbp) { const si=Math.round(n.hr/n.sbp*100)/100; add({id:'si', name:'Shock index', v:si, interp: (si>=1?'≥ 1.0 – occult shock / high risk':si>=0.7?'0.7–0.99 – borderline':'< 0.7 normal')+(F.trauma===1&&si>=1&&!(n.age!=null&&n.age<16)?' · trauma: predicts transfusion / MTP need':'')+(n.age!=null&&n.age<16?' · adult cut-off – children have higher normal values (use age-adjusted SI)':''), details:`HR ${n.hr} ÷ SBP ${n.sbp}`, lvl:si>=1?3:si>=0.7?1:0, src:'Allgöwer & Burri 1967 · HR/SBP'}); }
   // qSOFA
   if(yes('fever_any')||yes('t_lt36')||top.has('sepsis')){ const q=qsofa(D); add({id:'qsofa', name:'qSOFA', v:q.v, max:3, miss:q.miss, interp:q.v>=2?'≥ 2 – high risk of poor outcome; screen for sepsis/organ dysfunction':'< 2 (does not exclude sepsis)', lvl:q.v>=2?3:0, src:'Sepsis-3 2016 (intl)'}); }
   // CURB-65 + PCAP
@@ -1288,7 +1829,194 @@ function computeScores(D, R){
   // Dengue classification
   const den = R.all.find(r=>r.id==='dengue');
   if(den && den.s>=3) add(dengueClass(D));
+  if(F.trauma===1) traumaScores(D).forEach(add);
   return S;
+}
+// ---------- trauma rules & scores (pure; each returns a score card) ----------
+const tbiCat = g => g<=8?'severe (GCS 3–8)':g<=12?'moderate (GCS 9–12)':'mild (GCS 13–15)';
+const isChild = D => D.n.age!=null && D.n.age<16;
+// shock signs: adults – SBP < 90, shock index ≥ 1, cold clammy skin (SBP < 110 counts at ≥ 65 y);
+// children – hypotension for age (SBP < 70 + 2 × age, < 90 from 10 y) or poor perfusion; adult SI / HR cut-offs not used.
+function isShock(D){ const F=D.F, n=D.n; if(F.cool_periph===1) return true;
+  if(isChild(D)){ const lim = n.age>=10 ? 90 : 70 + 2*Math.max(1,n.age); return n.sbp!=null && n.sbp<lim; }
+  return F.sbp_lt90===1 || F.si_ge1===1 || (n.age!=null&&n.age>=65&&F.sbp_lt110===1); }
+function atlsClass(D){
+  // ATLS hemorrhage class estimate. Numeric HR / RR bands follow the ATLS 9th-ed table; ATLS 10th adds base deficit
+  // (0 to −2 / −2 to −6 / −6 to −10 / < −10) and replaces fixed numbers with trends. Take the worst parameter.
+  const n=D.n, F=D.F, why=[]; let k=0;
+  const up=(c,l)=>{ if(c>k) k=c; why.push(l+' → '+['','I','II','III','IV'][c]); };
+  if(n.hr!=null) up(n.hr>140?4:n.hr>120?3:n.hr>100?2:1, 'HR '+n.hr);
+  if(n.sbp!=null) up(n.sbp<70?4:n.sbp<90?3:1, 'SBP '+n.sbp);
+  if(n.sbp!=null&&n.dbp!=null&&n.sbp-n.dbp<=25&&n.sbp>=90) up(2,'pulse pressure '+(n.sbp-n.dbp));
+  if(n.rr!=null) up(n.rr>35?4:n.rr>30?3:n.rr>20?2:1, 'RR '+n.rr);
+  if(n.bd!=null) up(n.bd>10?4:n.bd>6?3:n.bd>2?2:1, 'base deficit '+n.bd);
+  if(n.gcs!=null&&n.gcs<15&&n.sbp!=null&&n.sbp<90) up(3,'altered mentation with hypotension');
+  if(!k) return {cls:null};
+  return {cls:['','I','II','III','IV'][k], k, loss:['','< 15 %','15–30 %','31–40 %','> 40 %'][k], why};
+}
+function traumaScores(D){
+  const F=D.F, n=D.n, out=[]; const y=id=>F[id]===1, no=id=>F[id]===-1, unk=id=>F[id]==null;
+  const age=n.age, gcs=n.gcs;
+  // 1. GCS / TBI category
+  if(gcs!=null) out.push({id:'tbi', name:'GCS – TBI severity', v:gcs, max:15, interp:'TBI category: '+tbiCat(gcs)+(gcs<=8?' → secure airway, neurosurgical centre':gcs<=12?' → CT head, admit / neurosurgery':''),
+    details:(n.gE!=null&&n.gV!=null&&n.gM!=null?`E${n.gE} V${n.gV} M${n.gM}`:'total entered')+(y('pupil_uni')?' · unilateral dilated pupil':y('pupil_bil')?' · bilateral fixed pupils':''), lvl:gcs<=8?3:gcs<=12?2:gcs<15?1:0, src:'Teasdale & Jennett 1974 · BTF 2016 (intl)'});
+  // 2. ATLS hemorrhage class
+  const bleedCtx = isShock(D)||y('ext_hemorrhage')||y('us_fluid')||y('pelvic_unstable')||y('cxr_htx')||y('femur_fx')||y('penetrating')||y('hard_vasc')||(n.bd!=null&&n.bd>2)||(n.hr!=null&&n.hr>100);
+  const ac = (!isChild(D) && bleedCtx) ? atlsClass(D) : {cls:null};
+  if(isChild(D) && bleedCtx) out.push({id:'atls', name:'ATLS hemorrhage class', v:'Child', interp:'Adult HR / BP bands do not apply – use age-specific vital signs; tachycardia and poor perfusion precede hypotension (late sign: SBP < 70 + 2 × age)', lvl:isShock(D)?3:1, src:'ATLS 10th ed pediatric chapter · APLS (intl)'});
+  if(ac.cls) out.push({id:'atls', name:'ATLS hemorrhage class (estimate)', v:'Class '+ac.cls, interp:'Estimated blood loss '+ac.loss+(ac.k>=3?' → blood products / MTP, hemorrhage control':ac.k===2?' → crystalloid bridge, type-specific blood, find source':' → monitor, reassess'),
+    details:ac.why.join(' · ')+' · worst parameter wins; β-blockers, age, pregnancy, athletes and pain alter vital signs'+(y('mech_burn')?' · burns: early tachycardia / shock is usually NOT from the burn – look for another injury':''), miss:['HR','SBP','RR'].filter(k=>n[k.toLowerCase()]==null).concat(n.bd==null?['base deficit']:[]), lvl:ac.k>=3?3:ac.k===2?2:0, src:'ATLS 10th ed (2018) table; HR/RR bands from 9th ed (intl)'});
+  // 3. ABC score (derived and validated in adults)
+  if(!isChild(D)){ const miss=[]; let v=0; const it=[];
+    if(y('penetrating')){ v++; it.push('penetrating'); }
+    if(n.sbp==null) miss.push('SBP'); else if(n.sbp<=90){ v++; it.push('SBP ≤ 90'); }
+    if(n.hr==null) miss.push('HR'); else if(n.hr>=120){ v++; it.push('HR ≥ 120'); }
+    if(y('us_fluid')||y('fast_abd')){ v++; it.push('FAST +'); } else if(!y('fast_neg')&&F.us_fluid==null) miss.push('FAST');
+    out.push({id:'abc', name:'ABC score (massive transfusion)', v, max:4, interp:v>=2?'≥ 2 → predicts massive transfusion: activate MTP':'< 2 → MTP not predicted (use clinical judgment)', details:it.join(', ')||'no criteria met', miss, lvl:v>=2?3:0, src:'Nunez et al. J Trauma 2009 · ATLS 11th ed (intl)'}); }
+  // 4. Revised trauma score
+  if(gcs!=null&&n.sbp!=null&&n.rr!=null){
+    const cg = gcs>=13?4:gcs>=9?3:gcs>=6?2:gcs>=4?1:0, cs = n.sbp>89?4:n.sbp>=76?3:n.sbp>=50?2:n.sbp>=1?1:0, cr = (n.rr>=10&&n.rr<=29)?4:n.rr>29?3:n.rr>=6?2:n.rr>=1?1:0;
+    const rts = Math.round((0.9368*cg+0.7326*cs+0.2908*cr)*1000)/1000, trts=cg+cs+cr;
+    out.push({id:'rts', name:'Revised Trauma Score', v:rts, max:7.841, interp:`Triage-RTS ${trts}/12`+(trts<11?' → < 11: triage to a trauma centre':' (≥ 11)')+' · lower RTS = higher mortality', details:`coded GCS ${cg}, SBP ${cs}, RR ${cr} · RTS = 0.9368·GCS + 0.7326·SBP + 0.2908·RR`, lvl:trts<11?3:trts<12?1:0, src:'Champion et al. J Trauma 1989 (intl)'});
+  }
+  // 5. Canadian C-spine rule (alert, stable adults)
+  const neckRelevant = y('neck_pain')||y('neck_midline')||y('blunt')||y('mech_axial');
+  if(neckRelevant && !y('penetrating')){
+    const na=[]; if(age!=null&&age<16) na.push('age < 16'); if(gcs!=null&&gcs<15) na.push('GCS < 15'); if(n.sbp!=null&&n.sbp<90) na.push('SBP < 90'); if(n.rr!=null&&(n.rr<10||n.rr>24)) na.push('RR outside 10–24'); if(y('cord_deficit')) na.push('acute paralysis');
+    if(na.length) out.push({id:'ccr', name:'Canadian C-spine rule', v:'N/A', interp:'Rule not applicable ('+na.join(', ')+') → keep spinal motion restriction; CT C-spine', lvl:2, src:'Stiell et al. JAMA 2001 (intl)'});
+    else {
+      const hi=[], miss=[]; if(age==null) miss.push('age'); else if(age>=65) hi.push('age ≥ 65');
+      if(y('fall_ge1m')) hi.push('fall ≥ 1 m / 5 stairs'); if(y('mech_axial')) hi.push('axial load'); if(y('mech_hienergy')) hi.push('high-speed / rollover / ejection MVC'); if(y('mech_moto')) hi.push('motorcycle crash (treated as dangerous – motorised vehicle)');
+      if(y('paresthesia')) hi.push('paresthesias'); else if(unk('paresthesia')) miss.push('paresthesias');
+      if(gcs==null) miss.push('GCS 15 (alert)');
+      const lo=[]; if(y('cs_simple')) lo.push('simple rear-end MVC'); if(y('cs_amb')) lo.push('ambulatory / sitting'); if(y('cs_delayed')) lo.push('delayed neck pain'); if(no('neck_midline')) lo.push('no midline tenderness');
+      let v, interp, lvl;
+      if(hi.length){ v='Image'; interp='High-risk factor ('+hi.join(', ')+') → CT C-spine'; lvl=2; }
+      else if(!lo.length){ v='Image'; interp='No low-risk factor present → CT C-spine'+(unk('neck_midline')?' (midline tenderness not assessed)':''); lvl=2; }
+      else if(y('cs_rotate')){ v='No imaging'; interp='Low-risk factor ('+lo.join(', ')+') and able to rotate 45° L and R → no imaging by rule'; lvl=0; }
+      else if(no('cs_rotate')){ v='Image'; interp='Unable to rotate neck 45° → CT C-spine'; lvl=2; }
+      else { v='Assess'; interp='Low-risk factor present – now test active rotation 45° left and right'; lvl=1; }
+      out.push({id:'ccr', name:'Canadian C-spine rule', v, interp, details:'Alert (GCS 15), stable adults with neck injury; not for penetrating trauma, age < 16, paralysis', miss, lvl, src:'Stiell et al. JAMA 2001 (intl)'});
+    }
+    // NEXUS
+    const crit=[['midline tenderness', F.neck_midline], ['focal neuro deficit', (y('lateralizing')||y('cord_deficit')||y('hemiparesis'))?1:(no('lateralizing')||no('cord_deficit'))?-1:null],
+      ['altered alertness', gcs!=null?((gcs<15||y('confusion'))?1:-1):(y('confusion')?1:null)], ['intoxication', F.intox], ['painful distracting injury', F.distract]];
+    const posN=crit.filter(c=>c[1]===1).map(c=>c[0]), unkN=crit.filter(c=>c[1]==null).map(c=>c[0]);
+    out.push({id:'nexus', name:'NEXUS low-risk criteria', v: posN.length?'Image':unkN.length?'Incomplete':'Low risk', interp: posN.length?'Criterion present ('+posN.join(', ')+') → imaging indicated':unkN.length?'Cannot clear clinically until all 5 are assessed':'All 5 absent → no C-spine imaging needed',
+      miss:unkN, lvl:posN.length?2:unkN.length?1:0, src:'Hoffman et al. NEJM 2000 (intl)'});
+  }
+  // 6. Canadian CT head rule (adults, GCS 13–15) / PECARN (children)
+  const headRelevant = y('head_inj')||y('loc')||y('amnesia')||y('scalp_hematoma')||y('skull_fx')||y('basilar')||y('lucid');
+  if(headRelevant && (age==null||age>=16)){
+    const na=[]; if(gcs!=null&&gcs<13) na.push('GCS < 13 – moderate/severe TBI'); if(y('m_anticoag')) na.push('anticoagulated'); if(y('post_seizure')) na.push('seizure after injury'); if(y('skull_fx')&&false) na.push('');
+    if(na.length) out.push({id:'cchr', name:'Canadian CT head rule', v:'CT', interp:'Rule not applicable ('+na.join(', ')+') → CT head indicated', lvl:3, src:'Stiell et al. Lancet 2001 · ACEP 2023 (intl)'});
+    else {
+      const hi=[], md=[], miss=[];
+      if(gcs==null) miss.push('GCS'); else if(gcs<15) hi.push('GCS < 15 (at 2 h)');
+      if(y('skull_fx')) hi.push('open / depressed skull fracture'); if(y('basilar')) hi.push('basal skull fracture signs'); if(y('vomit2')) hi.push('vomiting ≥ 2');
+      if(age==null) miss.push('age'); else if(age>=65) hi.push('age ≥ 65');
+      if(y('amnesia')) md.push('amnesia ≥ 30 min before impact'); if(y('mech_ped')) md.push('pedestrian struck'); if(y('mech_hienergy')) md.push('ejection from vehicle'); if(y('fall_ge1m')) md.push('fall ≥ 1 m / 5 stairs');
+      out.push({id:'cchr', name:'Canadian CT head rule', v:hi.length?'CT – high risk':md.length?'CT – medium risk':'No CT by rule', interp:hi.length?'High risk for neurosurgical intervention ('+hi.join(', ')+') → CT head':md.length?'Medium risk for brain injury on CT ('+md.join(', ')+') → CT head':'No high/medium-risk factor → CT not required by rule (if LOC/amnesia/disorientation with GCS 13–15)',
+        details:'For GCS 13–15 after witnessed LOC, amnesia or disorientation; motorcycle crash alone is not a listed dangerous mechanism', miss, lvl:hi.length?3:md.length?2:0, src:'Stiell et al. Lancet 2001 (intl)'});
+    }
+  }
+  if(headRelevant && age!=null && age<18){
+    const lt2 = age<2, hiF=[], midF=[];
+    const fallSev = n.fallM!=null && n.fallM > (lt2?0.9:1.5);
+    const sevMech = y('mech_hienergy')||(y('mech_ped'))||(y('mech_moto')&&y('no_helmet'))||fallSev;
+    if(gcs!=null&&gcs<15) hiF.push('GCS < 15'); if(y('confusion')) hiF.push('altered mental status');
+    if(lt2){ if(y('skull_fx')) hiF.push('palpable skull fracture'); if(y('scalp_hematoma')) midF.push('non-frontal scalp hematoma'); if(y('loc')) midF.push('LOC ≥ 5 s'); if(sevMech) midF.push('severe mechanism'); if(y('not_normal')) midF.push('not acting normally per parent'); }
+    else { if(y('basilar')) hiF.push('basal skull fracture signs'); if(y('loc')) midF.push('LOC'); if(y('vomiting')||y('vomit2')) midF.push('vomiting'); if(sevMech) midF.push('severe mechanism'); if(y('sev_headache')) midF.push('severe headache'); }
+    out.push({id:'pecarn', name:'PECARN head injury ('+(lt2?'< 2 y':'2–17 y')+')', v:hiF.length?'CT':midF.length?'Observe vs CT':'No CT', interp:hiF.length?'High risk ('+hiF.join(', ')+') → CT recommended (ciTBI ≈ 4.4 %)':midF.length?'Intermediate ('+midF.join(', ')+') → observation vs CT (ciTBI ≈ 0.9 %): CT if several findings, worsening, age < 3 mo or parental preference':'Very low risk (ciTBI < 0.05 %) → CT not recommended',
+      details:'Severe mechanism: ejection / rollover / death in vehicle, pedestrian or unhelmeted rider struck, fall > '+(lt2?'0.9 m':'1.5 m')+', high-impact object'+(n.fallM!=null?' · fall entered: '+n.fallM.toFixed(1)+' m':''), lvl:hiF.length?3:midF.length?2:0, src:'Kuppermann et al. Lancet 2009 (intl)'});
+  }
+  // 7. Burn fluid (ATLS 10th / ABA 2023 starting rate)
+  if(n.tbsa!=null && n.tbsa>0){
+    const child = age!=null && age<14, f = y('burn_elec')?4:child?3:2;
+    let v='—', interp='Enter weight (kg) to calculate', details='';
+    if(n.wt){ const tot=f*n.wt*n.tbsa, half=tot/2; const el=n.injH; const rem = el!=null&&el<8 ? 8-el : 8;
+      v=Math.round(tot)+' mL / 24 h';
+      interp=`First half ${Math.round(half)} mL by hour 8 after the burn → ${Math.round(half/rem)} mL/h${el!=null?` (${el.toFixed(1)} h elapsed, ${rem.toFixed(1)} h left; subtract fluid already given)`:' (time of injury not entered – assumes now)'}; then ${Math.round(half)} mL over the next 16 h (${Math.round(half/16)} mL/h)`;
+      details=`${f} mL × ${n.wt} kg × ${n.tbsa} % TBSA, Lactated Ringer's${y('burn_elec')?' (electrical: 4 mL)':child?' (child: 3 mL; add maintenance dextrose fluid)':' (adult: 2 mL)'} · original Parkland = 4 mL/kg/% · titrate to urine output ${child&&n.wt<30?'1 mL/kg/h':'0.5 mL/kg/h'} (${Math.round((child&&n.wt<30?1:0.5)*n.wt)} mL/h) – starting estimate only [⚠ VERIFY]`; }
+    const formal = n.tbsa >= (child?10:20);
+    out.push({id:'burnfluid', name:'Burn fluid – ATLS / ABA starting rate', v, interp:(formal?'':'< '+(child?10:20)+' % TBSA: formal resuscitation usually not needed (oral / maintenance) · ')+interp, details, miss:n.wt?[]:['weight'], lvl:formal?2:0, src:'ATLS 10th ed (2018) · ABA 2023 burn resuscitation CPG (intl)'});
+  }
+  // 8. TXA window
+  const bleeding = isShock(D)||(!isChild(D)&&n.hr!=null&&n.hr>110)||y('ext_hemorrhage')||y('us_fluid')||y('pelvic_unstable')||y('cxr_htx');
+  const tbiTxa = !isChild(D) && (y('head_inj')||y('loc')) && gcs!=null && gcs>=9 && gcs<=15 && !y('pupil_bil');
+  if(bleeding || tbiTxa){
+    const h=n.injH; let v, interp, lvl;
+    if(h==null){ v='Time?'; interp='Enter time since injury – TXA only within 3 h'; lvl=2; }
+    else if(h<=3){ v='Give TXA'; interp=`${h.toFixed(1)} h since injury (≤ 3 h): 1 g IV over 10 min, then 1 g over 8 h – earlier is better [⚠ VERIFY]`; lvl=3; }
+    else { v='Do not start'; interp=`${h.toFixed(1)} h since injury (> 3 h): CRASH-2 showed no benefit / possible harm when started after 3 h`; lvl=1; }
+    if(isChild(D) && h!=null && h<=3) interp=`${h.toFixed(1)} h since injury (≤ 3 h): 15 mg/kg IV (max 1 g) over 10 min, then 2 mg/kg/h × 8 h [⚠ VERIFY]`;
+    out.push({id:'txa', name:'TXA window', v, interp, details:(bleeding?(isChild(D)?'Bleeding / shock in a child (pediatric use extrapolated from CRASH-2, PED-TRAX)':'Significant bleeding (SBP < 90, HR > 110, or source identified)'):'TBI, GCS 9–15 (CRASH-3: adults with GCS ≤ 12 or intracranial bleeding on CT; benefit seen in mild–moderate TBI, not with bilateral unreactive pupils)'), lvl, src:'CRASH-2 (Lancet 2010/2011) · CRASH-3 (Lancet 2019) (intl)'});
+  }
+  // 9. Trauma-centre / transfer criteria
+  const tc=traumaCentre(D);
+  if(tc.length) out.push({id:'tcentre', name:'Trauma-centre / transfer criteria', v:'Met', interp:'Meets criteria for a trauma centre – arrange transfer after stabilisation if not already at one', details:tc.join(' · '), lvl:3, src:'ACS COT 2021 National Guideline for Field Triage · ATLS transfer chapter (intl) · DOH DO 2021-0001 / RA 10932 (PH)'});
+  return out;
+}
+function traumaCentre(D){
+  const F=D.F, n=D.n, y=id=>F[id]===1, c=[];
+  if(n.gcs!=null&&n.gcs<=13) c.push('GCS ≤ 13');
+  if(isChild(D)){ if(isShock(D)) c.push('hypotension / poor perfusion for age'); }
+  else { if(n.sbp!=null&&(n.sbp<90||(n.age!=null&&n.age>=65&&n.sbp<110))) c.push(n.age>=65?'SBP < 110 at age ≥ 65':'SBP < 90');
+    if(n.hr!=null&&n.sbp&&n.hr>n.sbp) c.push('HR > SBP'); }
+  if(n.rr!=null&&(n.rr<10||(n.rr>29&&!isChild(D)))) c.push('RR < 10 or > 29'); else if(y('spo2_lt90')) c.push('SpO₂ < 90 %');
+  if(y('penetrating')) c.push('penetrating injury to head, neck, torso or proximal limb');
+  if(y('skull_fx')) c.push('open / depressed skull fracture'); if(y('flail_seg')) c.push('chest wall instability / flail');
+  if(y('pelvic_unstable')) c.push('suspected pelvic fracture'); if(y('cord_deficit')) c.push('suspected spinal cord injury');
+  if(y('hard_vasc')||y('mech_crush')&&y('crush_long')) c.push('crushed / pulseless extremity'); if(y('femur_fx')) c.push('proximal long-bone fracture');
+  if((n.tbsa!=null&&n.tbsa>=(n.age!=null&&n.age<14?10:20))||y('burn_full')||y('face_burn')||y('burn_elec')) c.push('burn meeting burn-centre criteria');
+  if(y('pregnant')&&y('ga_ge20')) c.push('pregnancy ≥ 20 wk');
+  if((y('m_anticoag')||y('m_antiplt'))&&y('head_inj')) c.push('anticoagulant / antiplatelet with head injury');
+  if(y('mech_hienergy')) c.push('high-risk mechanism (ejection, rollover, death in vehicle)');
+  if(y('mech_ped')||(y('mech_moto')&&(y('no_helmet')||y('mech_hienergy')))) c.push(y('mech_ped')?'pedestrian struck / run over':'motorcycle crash with significant impact (rider thrown; unhelmeted = local add-on)');
+  if(y('fall_ge3m')) c.push('fall ≥ 3 m');
+  return c;
+}
+// ---------- "Primary survey first" banner (xABCDE life threats) ----------
+function primarySurvey(D){
+  const F=D.F, n=D.n, y=id=>F[id]===1, no=id=>F[id]===-1, rows=[];
+  const row=(k,t,st,msg,tk)=>rows.push({k,t,st,msg,tk});
+  // x
+  if(y('ext_hemorrhage')||y('hard_vasc')) row('x','Exsanguinating hemorrhage','threat','Stop it first: direct pressure → tourniquet high and tight (note time) → wound packing / junctional pressure; then blood','abcde');
+  else row('x','Exsanguinating hemorrhage', no('ext_hemorrhage')?'ok':'unk', no('ext_hemorrhage')?'No catastrophic external bleeding recorded':'Look for catastrophic external bleeding','abcde');
+  // A
+  const aT=[]; if(y('air_obst')) aT.push('airway obstructed'); else if(y('air_threat')) aT.push('airway threatened'); if(y('stridor')) aT.push('stridor'); if(y('face_burn')||y('voice_change')) aT.push('inhalation / airway burn signs'); if(y('airway_blood')) aT.push('blood / debris in airway'); if(y('face_fx')) aT.push('facial fracture'); if(n.gcs!=null&&n.gcs<=8) aT.push('GCS ≤ 8');
+  row('A','Airway + C-spine', aT.length?'threat':F.air_threat===-1?'ok':'unk', aT.length? aT.join(', ')+' → suction, jaw thrust, definitive airway (RSI, in-line stabilisation) by the most experienced operator; surgical airway if CICO' : F.air_threat===-1?'Airway patent – keep spinal motion restriction':'Assess airway patency (talking? stridor? blood?)','rsicheck');
+  // B
+  const bT=[]; const shock = isShock(D);
+  if(y('dec_bs_uni')&&(y('hyperres')||y('trach_dev')||y('jvd')||y('cxr_ptx'))&&(shock||y('spo2_lt90'))) bT.push('TENSION PNEUMOTHORAX likely → needle (4th–5th ICS anterior to mid-axillary line) or finger thoracostomy NOW, then chest tube');
+  else if(y('cxr_ptx')||(y('dec_bs_uni')&&y('hyperres'))) bT.push('pneumothorax → chest tube; decompress if hemodynamics / SpO₂ worsen');
+  if(y('open_chest')) bT.push('open pneumothorax → vented chest seal / 3-sided dressing, chest tube');
+  if(y('cxr_htx')||y('tube_1500')||(y('dec_bs_uni')&&shock&&!y('hyperres'))) bT.push('hemothorax → chest tube + blood; ≥ 1500 mL or > 200 mL/h → thoracotomy');
+  if(y('flail_seg')) bT.push('flail chest → O₂, analgesia, ventilatory support');
+  if(y('spo2_lt90')) bT.push('SpO₂ < 90 %');
+  row('B','Breathing', bT.length?'threat':(F.dec_bs_uni===-1&&!y('spo2_lt90'))?'ok':'unk', bT.length?bT.join(' · '):(F.dec_bs_uni===-1?'Equal breath sounds, no chest threat recorded':'Auscultate both sides, check SpO₂ / RR, chest wall, eFAST lung windows'),'ptx');
+  // C
+  const cT=[]; const tamp = y('us_effusion')||(y('muffled')&&y('jvd')&&y('sbp_lt90'));
+  if(tamp) cT.push('CARDIAC TAMPONADE → OR / thoracotomy now (pericardiocentesis only as a bridge)');
+  if(shock) cT.push('SHOCK – assume hemorrhage: 2 large-bore IV/IO, MTP 1:1:1 / whole blood, TXA if ≤ 3 h, permissive hypotension SBP 80–90 ('+(y('head_inj')||(n.gcs!=null&&n.gcs<13)||y('cord_deficit')?'NOT here – TBI/cord: keep SBP ≥ 100–110':'not if TBI')+')');
+  if(y('pelvic_unstable')) cT.push('pelvic fracture → binder over greater trochanters');
+  if(y('us_fluid')&&shock) cT.push('FAST + and unstable → OR / laparotomy');
+  else if(y('us_fluid')) cT.push('FAST + abdomen → CT if stable, surgeon now');
+  if(y('femur_fx')) cT.push('femur fracture → traction splint');
+  row('C','Circulation + hemorrhage control', cT.length?'threat':(n.sbp!=null&&n.hr!=null&&!shock&&(isChild(D)||n.hr<=100))?'ok':'unk', cT.length?cT.join(' · '):(n.sbp!=null?'No shock signs recorded – reassess HR, BP, skin, eFAST':'Enter HR / SBP, check skin perfusion, eFAST, pelvis'),'mtp');
+  // D
+  const dT=[];
+  if(n.gcs!=null&&n.gcs<=8) dT.push('severe TBI (GCS '+n.gcs+') → airway, SpO₂ ≥ 94 %, SBP ≥ 100–110, CT, neurosurgery');
+  else if(n.gcs!=null&&n.gcs<=12) dT.push('moderate TBI (GCS '+n.gcs+') → CT head, neurosurgery');
+  if(y('pupil_uni')||y('pupil_bil')||(y('lateralizing')&&n.gcs!=null&&n.gcs<15)) dT.push('HERNIATION signs → head up 30°, 3 % saline / mannitol, brief hyperventilation as bridge, emergency neurosurgery / transfer');
+  if(y('cord_deficit')) dT.push('cord injury → spinal motion restriction, MAP 85–90');
+  if(n.glu!=null&&n.glu<70) dT.push('hypoglycemia → dextrose');
+  row('D','Disability', dT.length?'threat':(n.gcs===15&&!y('lateralizing'))?'ok':'unk', dT.length?dT.join(' · '):(n.gcs!=null?'GCS '+n.gcs+', no lateralising signs recorded':'Record GCS (E/V/M), pupils, lateralising signs, glucose'),'icp');
+  // E
+  const eT=[]; if(y('t_lt35')) eT.push('HYPOTHERMIA (T < 35 °C) → warm fluids, blankets, warm room (lethal triad)');
+  if(y('mech_burn')) eT.push('burn → stop burning, remove clothing / jewellery, cool small burns, keep warm, estimate % TBSA');
+  row('E','Exposure / environment', eT.length?'threat':'unk', eT.length?eT.join(' · '):'Fully expose, log-roll (back, perineum), then cover – prevent hypothermia','burns');
+  return rows;
 }
 function dengueClass(D){
   const F=D.F, n=D.n, y=id=>F[id]===1;
@@ -1312,6 +2040,7 @@ function alerts(D){
   if(n.hr!=null&&(n.hr>=140||n.hr<40)) a.push('HR '+n.hr+' – unstable rhythm? ECG now');
   if(n.T!=null&&n.T>=40) a.push('T ≥ 40 °C – hyperthermia: cool, consider heat stroke / sepsis / storm');
   if(n.sbp!=null&&n.sbp>=220) a.push('SBP ≥ 220 – check for hypertensive emergency');
+  if(D.F.trauma===1 && n.T!=null && n.T<35) a.push('T < 35 °C in trauma – hypothermia worsens coagulopathy: actively warm');
   return a;
 }
 // ---------- chart note ----------
@@ -1328,6 +2057,17 @@ function chartNote(I, D, R, scores, planIds){
   const hp=[], hn=[]; ['hx_gen','hx_cr','hx_gi','hx_gu','hx_neuro','hx_exp'].forEach(g=>{ hp.push(...pos(g)); hn.push(...negs(g)); });
   L.push('HPI: (+) '+(hp.join(', ')||'—')+(hn.length?' | (−) '+hn.join(', '):''));
   if((I.text||'').trim()) L.push('Narrative: '+I.text.trim().replace(/\s+/g,' '));
+  if(F.trauma===1){
+    const tg=['tr_mech','tr_x','tr_a','tr_b','tr_c','tr_fast','tr_d','tr_e','tr_head','tr_neck','tr_chest','tr_abd','tr_spine','tr_ext','tr_preg'];
+    const t=I.tr||{}; const ctx=[];
+    if(n.injH!=null) ctx.push('time since injury '+(n.injH<1?Math.round(n.injH*60)+' min':n.injH.toFixed(1)+' h')); if(n.fallM!=null) ctx.push('fall '+n.fallM.toFixed(1)+' m');
+    if(t.air) ctx.push('airway '+({patent:'patent',threat:'threatened',obst:'obstructed'}[t.air])); if(t.bs) ctx.push('breath sounds '+({equal:'equal',L:'↓ left',R:'↓ right',both:'↓ both'}[t.bs]));
+    if(n.gE!=null&&n.gV!=null&&n.gM!=null) ctx.push(`GCS E${n.gE}V${n.gV}M${n.gM}=${n.gE+n.gV+n.gM}`); if(t.pup) ctx.push('pupils '+({equal:'equal & reactive',uni:'unilateral dilated',bil:'bilateral fixed dilated',pin:'pinpoint'}[t.pup]));
+    if(n.tbsa!=null) ctx.push('burn '+n.tbsa+' % TBSA'); if(n.wt) ctx.push('weight '+n.wt+' kg'); if(n.bd!=null) ctx.push('base deficit '+n.bd);
+    const tp=[], tn=[]; tg.forEach(g=>{ tp.push(...pos(g)); tn.push(...negs(g)); });
+    L.push('TRAUMA: '+[ctx.join(', '), tp.length?'(+) '+tp.join(', '):'', tn.length?'(−) '+tn.join(', '):''].filter(Boolean).join(' | '));
+    L.push('PRIMARY SURVEY: '+primarySurvey(D).map(r=>r.k+' '+(r.st==='threat'?'⚠ ':r.st==='ok'?'ok ':'? ')+r.msg).join(' | '));
+  }
   const pm=pos('pmh'), pmn=negs('pmh'); L.push('PMH / RF: '+(pm.join(', ')||'none entered')+(pmn.length?' | (−) '+pmn.join(', '):''));
   const md=pos('meds'); L.push('Meds: '+([...md, (I.meds||'').trim()].filter(Boolean).join(', ')||'none entered'));
   const v=I.v||{}; const vs=[]; if(v.hr) vs.push('HR '+v.hr); if(v.sbp||v.dbp) vs.push('BP '+(v.sbp||'?')+'/'+(v.dbp||'?')); if(v.rr) vs.push('RR '+v.rr); if(v.t) vs.push('T '+v.t+' °C'); if(v.spo2) vs.push('SpO₂ '+v.spo2+' %'+(v.o2?' on O₂':' RA')); if(v.gcs) vs.push('GCS '+v.gcs); if(v.glu) vs.push('CBG '+v.glu+' '+(v.gluU==='mmol'?'mmol/L':'mg/dL'));
@@ -1347,12 +2087,12 @@ function chartNote(I, D, R, scores, planIds){
     L.push('» '+c.n);
     L.push('  Diagnostics: '+c.dx.join('; ')+'  [Source: '+c.dxs+']');
     L.push('  Treatment: '+V2T(c.tx.join('; '))+'  [Source: '+c.txs+']');
-    L.push('  Disposition: '+c.dispo); });
+    L.push('  Disposition: '+c.dispo+(c.dps?'  [Source: '+c.dps+']':'')); });
   if(mn.length) L.push('» To exclude (must-not-miss): '+mn.map(r=>r.c.n+' – '+r.c.dx[0]).join(' | '));
   L.push(''); L.push('Decision support only – not a diagnosis. Clinical judgment overrides. Generated offline; no data left the device.');
   return L.join('\n');
 }
-if(typeof module!=='undefined') module.exports={extract,derive,scoreAll,computeScores,alerts,chartNote,tier,CC_MAP};
+if(typeof module!=='undefined') module.exports={extract,derive,scoreAll,computeScores,alerts,chartNote,tier,CC_MAP,primarySurvey,traumaScores,atlsClass,traumaCentre,isShock};
 
 </script>
 <script>
@@ -1432,6 +2172,52 @@ const CASES = [
  I:{age:40, sex:'M', cc:'Snakebite', onset:'acute', dur:2, durU:'h',
     chips:{snake_bite:P,vomiting:P,speech:P,dyspnea:P,fang_marks:P,ptosis:P},
     v:{hr:104,sbp:130,dbp:80,rr:24,t:36.9,spo2:94,gcs:15}, lab:{}, text:'Tinuklaw ng ahas sa bukid 2 oras na ang nakaraan, namumungay ang mata.'}},
+// ---------- Trauma mode cases (I.tr = trauma-section inputs) ----------
+{id:'tr_moto_edh', name:'🩻 Motorcycle crash, walang helmet – EDH (24 M, GCS 9)', expect:'tr_edh', mnm:['tr_edh','tr_tbi'],
+ I:{age:24, sex:'M', cc:'Trauma / injury', tr:{on:true, injT:90, injU:'min', air:'threat', bs:'equal', pup:'uni', gcsE:2, gcsV:3, gcsM:4, wt:65},
+    chips:{mech_moto:P,no_helmet:P,head_inj:P,loc:P,lucid:P,intox:P,scalp_hematoma:P,skull_fx:P,vomit2:P,lateralizing:P,ext_hemorrhage:N,pelvic_unstable:N,fast_neg:P},
+    v:{hr:58,sbp:172,dbp:88,rr:12,t:36.6,spo2:94,glu:110,gluU:'mg'}, lab:{},
+    text:'Naaksidente sa motor, walang helmet, sumalpok sa poste 90 minutes ago. Nawalan ng malay, nagising at nakausap pa, tapos lumala – nagsuka ng 2 beses, ngayon hindi na sumasagot nang maayos. Nakainom daw.'}},
+{id:'tr_stab_tamp', name:'🩻 Sinaksak sa dibdib – cardiac tamponade (30 M)', expect:'tr_tamponade', mnm:['tr_tamponade','tr_shock'],
+ I:{age:30, sex:'M', cc:'Trauma / injury', tr:{on:true, injT:25, injU:'min', air:'patent', bs:'equal', pup:'equal', gcsE:4, gcsV:4, gcsM:6, wt:60},
+    chips:{mech_stab:P,chest_pen:P,box_wound:P,jvd:P,muffled:P,fast_peri:P,cool_periph:P,hyperres:N,trach_dev:N,ext_hemorrhage:N,open_chest:N},
+    v:{hr:132,sbp:78,dbp:64,rr:28,t:36.4,spo2:95}, lab:{},
+    text:'Sinaksak ng kutsilyo sa kaliwang dibdib malapit sa sternum mga 25 minuto ang nakaraan. Nanghihina, malamig ang pawis, hirap huminga.'}},
+{id:'tr_fall_pelvis', name:'🩻 Nahulog sa scaffolding – pelvic fracture in shock (52 M)', expect:'tr_pelvis', mnm:['tr_pelvis','tr_shock'],
+ I:{age:52, sex:'M', cc:'Trauma / injury', tr:{on:true, injT:1, injU:'h', fallM:6, air:'patent', bs:'equal', pup:'equal', gcsE:4, gcsV:4, gcsM:6, bd:9, wt:70},
+    chips:{mech_fall:P,pelvic_unstable:P,pelvic_pain:P,perineal:P,blood_meatus:P,fast_neg:P,cool_periph:P,ext_hemorrhage:N,abd_tender_tr:N,neck_midline:N},
+    v:{hr:134,sbp:82,dbp:60,rr:26,t:35.8,spo2:96}, lab:{},
+    text:'Nahulog mula sa scaffolding sa construction site, mga 6 m, isang oras na ang nakaraan. Masakit ang balakang, hindi makatayo, may dugo sa dulo ng ari.'}},
+{id:'tr_mvc_spleen', name:'🩻 Nabangga ang jeep – splenic injury (34 M)', expect:'tr_solid', mnm:['tr_solid'],
+ I:{age:34, sex:'M', cc:'Trauma / injury', tr:{on:true, injT:2, injU:'h', air:'patent', bs:'equal', pup:'equal', gcsE:4, gcsV:5, gcsM:6, wt:68},
+    chips:{mech_mvc:P,luq_tender:P,abd_tender_tr:P,chest_wall:P,fast_abd:P,ext_hemorrhage:N,pelvic_unstable:N,neck_midline:N,head_inj:N},
+    v:{hr:118,sbp:98,dbp:66,rr:22,t:36.8,spo2:97}, lab:{},
+    text:'Nabangga ang jeep na sinasakyan, tumama ang kaliwang tagiliran sa bakal. Masakit ang kaliwang itaas ng tiyan at kaliwang balikat. Walang nawalan ng malay.'}},
+{id:'tr_geri_sdh', name:'🩻 Nadulas sa banyo, naka-apixaban – acute SDH (78 F)', expect:'tr_sdh', mnm:['tr_sdh','tr_geri'],
+ I:{age:78, sex:'F', cc:'Trauma / injury', tr:{on:true, injT:6, injU:'h', air:'patent', bs:'equal', pup:'equal', gcsE:3, gcsV:4, gcsM:6, wt:52},
+    chips:{mech_fall_low:P,head_inj:P,scalp_hematoma:P,m_anticoag:P,af:P,htn:P,headache:P,vomit2:P,confusion:P,lateralizing:N,ext_hemorrhage:N,neck_midline:N},
+    v:{hr:84,sbp:168,dbp:92,rr:18,t:36.5,spo2:96,glu:128,gluU:'mg'}, lab:{},
+    text:'Nadulas sa banyo kaninang umaga, nauntog ang ulo. Naka-apixaban dahil sa AF. Ngayon inaantok, masakit ang ulo at nagsuka ng 2 beses.'}},
+{id:'tr_burn30', name:'🩻 Sumabog ang LPG – 30 % TBSA burn + inhalation (32 M, 65 kg)', expect:'tr_burn', mnm:['tr_burn','tr_inhal'],
+ I:{age:32, sex:'M', cc:'Trauma / injury', tr:{on:true, injT:1, injU:'h', tbsa:30, wt:65, air:'threat', bs:'equal', pup:'equal', gcsE:4, gcsV:5, gcsM:6},
+    chips:{mech_burn:P,burn_enclosed:P,face_burn:P,voice_change:P,burn_full:P,burn_special:P,burn_circ:N,ext_hemorrhage:N},
+    v:{hr:124,sbp:118,dbp:76,rr:24,t:36.9,spo2:95}, lab:{},
+    text:'Sumabog ang LPG sa kusina, nasunog ang mukha, dibdib at dalawang braso, isang oras na ang nakaraan. Paos ang boses, may uling sa ilong.'}},
+{id:'tr_tension', name:'🩻 Motor vs jeep – tension pneumothorax (27 M)', expect:'tr_tension', mnm:['tr_tension','tr_shock'],
+ I:{age:27, sex:'M', cc:'Trauma / injury', tr:{on:true, injT:40, injU:'min', air:'patent', bs:'R', pup:'equal', gcsE:4, gcsV:4, gcsM:6, wt:62},
+    chips:{mech_moto:P,chest_wall:P,subq_emph:P,hyperres:P,trach_dev:P,jvd:P,cool_periph:P,fast_ptx:P,ext_hemorrhage:N,fast_peri:N},
+    v:{hr:136,sbp:78,dbp:50,rr:34,t:36.5,spo2:82}, lab:{},
+    text:'Nabangga ng jeep ang motor, tumama ang dibdib sa manibela. Hirap na hirap huminga, nahihilo.'}},
+{id:'tr_preg', name:'🩻 Buntis 32 wk, tricycle crash – placental abruption (26 F)', expect:'tr_preg', mnm:['tr_preg'],
+ I:{age:26, sex:'F', preg:'yes', ga:32, cc:'Trauma / injury', tr:{on:true, injT:2, injU:'h', air:'patent', bs:'equal', pup:'equal', gcsE:4, gcsV:5, gcsM:6, wt:60},
+    chips:{mech_moto:P,uterine_tender:P,fhr_abn:P,vag_bleed:P,abd_pain:P,abd_tender_tr:P,ext_hemorrhage:N,pelvic_unstable:N},
+    v:{hr:112,sbp:100,dbp:62,rr:22,t:36.8,spo2:98}, lab:{},
+    text:'Buntis, 32 weeks AOG, naaksidente sa tricycle, tumama ang tiyan. Masakit ang tiyan, naninigas, may pagdurugo sa ari. Parang hindi gumagalaw ang baby.'}},
+{id:'tr_peds_head', name:'🩻 Nahulog sa hagdan – minor head injury, PECARN (6 M)', expect:'tr_mtbi', mnm:[],
+ I:{age:6, sex:'M', cc:'Trauma / injury', tr:{on:true, injT:3, injU:'h', fallM:2, air:'patent', bs:'equal', pup:'equal', gcsE:4, gcsV:5, gcsM:6, wt:20},
+    chips:{mech_fall:P,head_inj:P,loc:P,vomiting:P,scalp_hematoma:P,basilar:N,skull_fx:N,sev_headache:N,not_normal:N,ext_hemorrhage:N,neck_midline:N},
+    v:{hr:104,sbp:104,dbp:66,rr:22,t:36.9,spo2:99}, lab:{},
+    text:'Nahulog sa hagdan mga 2 m, nauntog ang ulo, saglit na nawalan ng malay, nagsuka minsan. Ngayon gising at naglalaro.'}},
 ];
 if(typeof module!=='undefined') module.exports={CASES};
 
@@ -1453,6 +2239,7 @@ const TK_BASE = /\/ddx\/[^/]*$/.test(location.pathname) ? '../index.html' : 'htt
 let CH = {};           // chip states {id: 1 | -1}
 let SEX = '';
 let PLAN = null, planTouched = false, last = null;
+let TR = false, trManualOff = false;   // trauma mode (auto-on when an injury is recorded, unless switched off by the user)
 
 // ---------- theme (same key as EM Toolkit: em_dark) ----------
 function getDark(){ try{ const v=localStorage.getItem('em_dark'); return v==null ? true : JSON.parse(v); }catch(e){ return true; } }
@@ -1462,6 +2249,31 @@ function setDark(d){ document.body.classList.toggle('dark', d); $('theme').textC
 // ---------- form ----------
 const chipHTML = g => `<div class="gl">${esc(FGROUPS[g].t)}</div><div class="chips">${FGROUPS[g].f.map(([id,l])=>`<button type="button" class="chip" data-f="${id}" aria-pressed="false">${esc(l)}</button>`).join('')}</div>`;
 const numIn = (id,label,ph,step) => `<div><label for="${id}">${label}</label><input id="${id}" type="number" inputmode="decimal" ${step?`step="${step}"`:''} placeholder="${ph||''}"></div>`;
+// linked chips: the same finding shown again in the trauma section (one state, painted everywhere)
+const linkHTML = ids => ids.map(id=>`<button type="button" class="chip lk" data-f="${id}" aria-pressed="false" title="Same finding as in ${esc((FGROUPS[FGROUP_OF[id]]||{}).t||'')}">${esc(FLABEL[id])}</button>`).join('');
+const chipsOnly = (g, extra) => `<div class="chips">${FGROUPS[g].f.map(([id,l])=>`<button type="button" class="chip" data-f="${id}" aria-pressed="false">${esc(l)}</button>`).join('')}${extra?linkHTML(extra):''}</div>`;
+const selIn = (id,label,opts) => `<div><label for="${id}">${label}</label><select id="${id}">${opts.map(([v,t])=>`<option value="${v}">${esc(t)}</option>`).join('')}</select></div>`;
+const TR_GROUPS = ['tr_mech','tr_x','tr_a','tr_b','tr_c','tr_fast','tr_d','tr_e','tr_head','tr_neck','tr_chest','tr_abd','tr_spine','tr_ext','tr_preg'];
+const MIRROR = [['trHr','hr'],['trSbp','sbp'],['trDbp','dbp'],['trRr','rr'],['trSpo2','spo2'],['trT','t']];
+function traumaForm(){
+  const gcsOpt = (n,lab) => [['','—'],...Array.from({length:n},(_,i)=>[String(n-i), (n-i)+' '+lab[n-i-1]])];
+  const E=['none','to pressure','to sound','spontaneous'], V=['none','sounds','words','confused','oriented'], M=['none','extension','abnormal flexion','normal flexion','localises','obeys'];
+  const ps = (k,t,body) => `<div class="psb"><div class="psh"><span class="pk">${k}</span>${esc(t)}</div>${body}</div>`;
+  return `<div class="note">ATLS xABCDE: treat life threats as you find them. Vital signs entered here are the same fields as in 📈 Vital signs.</div>
+  <div class="grid3"><div><label for="injT">Time since injury</label><div style="display:flex;gap:.3rem"><input id="injT" type="number" inputmode="decimal" placeholder="#" style="min-width:0"><select id="injU" style="width:3.9rem;flex:0 0 auto;padding-left:.3rem;padding-right:.1rem"><option value="min">min</option><option value="h" selected>h</option></select></div></div>
+    ${numIn('fallM','Fall height (m)','if fall','0.1')}${numIn('wt','Weight (kg)','for fluids','0.1')}</div>
+  <div class="gl">Context</div><div class="chips">${linkHTML(['m_anticoag','m_antiplt','m_bb'])}<button type="button" class="chip" id="trPreg" aria-pressed="false">Pregnant</button></div><div class="note" id="trCtx"></div>
+  <div class="gl">Mechanism (walang helmet, nabangga, nahulog, sinaksak, binaril…)</div>${chipsOnly('tr_mech')}
+  <div class="gl">Primary survey</div>
+  ${ps('x','Exsanguinating external hemorrhage', chipsOnly('tr_x'))}
+  ${ps('A','Airway + C-spine', `<div class="grid2">${selIn('air','Airway',[['','— not assessed'],['patent','Patent (talking)'],['threat','Threatened'],['obst','Obstructed']])}</div>`+chipsOnly('tr_a',['stridor']))}
+  ${ps('B','Breathing', `<div class="grid3">${numIn('trRr','RR','/min')}${numIn('trSpo2','SpO₂ %','')}${selIn('bs','Breath sounds',[['','—'],['equal','Equal'],['L','↓ Left'],['R','↓ Right'],['both','↓ Both']])}</div>`+chipsOnly('tr_b',['hyperres','trach_dev']))}
+  ${ps('C','Circulation + hemorrhage control', `<div class="grid3">${numIn('trHr','HR','/min')}${numIn('trSbp','SBP','mmHg')}${numIn('trDbp','DBP','mmHg')}</div><div class="grid3">${numIn('bd','Base deficit','e.g. 8','0.1')}</div>`+chipsOnly('tr_c',['cool_periph','jvd','muffled'])+`<div class="gl sm">eFAST</div>`+chipsOnly('tr_fast'))}
+  ${ps('D','Disability', `<div class="grid3">${selIn('gcsE','GCS – Eye',gcsOpt(4,E))}${selIn('gcsV','Verbal',gcsOpt(5,V))}${selIn('gcsM','Motor',gcsOpt(6,M))}</div><div class="grid2">${selIn('pup','Pupils',[['','—'],['equal','Equal & reactive'],['uni','One dilated / unreactive'],['bil','Both fixed & dilated'],['pin','Pinpoint']])}<div><label>GCS total</label><div class="gcst" id="gcsTot">—</div></div></div>`+chipsOnly('tr_d'))}
+  ${ps('E','Exposure / environment / burns', `<div class="grid3">${numIn('trT','Temp °C','','0.1')}${numIn('tbsa','Burn % TBSA','2nd + 3rd °','1')}</div>`+chipsOnly('tr_e'))}
+  <div class="gl">Secondary survey (head-to-toe)</div>
+  ${['tr_head','tr_neck','tr_chest','tr_abd','tr_spine','tr_ext','tr_preg'].map(g=>`<details class="sub" id="trs-${g}"${g==='tr_preg'?' hidden':''}><summary>${esc(FGROUPS[g].t)}<span class="cnt" id="cnt-${g}" hidden></span></summary>${chipsOnly(g, {tr_chest:['cxr_ptx','cxr_mediast'], tr_abd:['rebound','rigid','distended','hematuria'], tr_preg:['vag_bleed']}[g])}</details>`).join('')}`;
+}
 function sec(id, title, body, open){ return `<details class="card" id="sec-${id}" ${open?'open':''}><summary><span>${title}</span><span class="cnt" id="cnt-${id}" hidden></span></summary>${body}</details>`; }
 function buildForm(){
   const ccOpts = ['', ...Object.keys(CC_MAP), 'Other'].map(c=>`<option value="${esc(c)}">${c?esc(c):'— select —'}</option>`).join('');
@@ -1469,6 +2281,7 @@ function buildForm(){
   $('form').innerHTML =
   sec('pt','👤 Patient', `<div class="grid2">${numIn('age','Age (years)','e.g. 45')}<div><label>Sex</label><div class="seg" id="sexseg"><button type="button" data-sex="M">Male</button><button type="button" data-sex="F">Female</button></div></div></div>
     <div class="grid2" id="pregrow" hidden><div><label for="preg">Pregnancy</label><select id="preg"><option value="unk">Unknown / not asked</option><option value="yes">Pregnant (confirmed)</option><option value="possible">Possible (late period)</option><option value="no">Not pregnant (test negative)</option></select></div>${numIn('ga','Gestation (weeks)','if pregnant')}</div>`, true) +
+  sec('tr','🩻 Trauma – primary & secondary survey', traumaForm(), true) +
   sec('hpi','🗣 Chief complaint & HPI', `<label for="cc">Chief complaint</label><select id="cc">${ccOpts}</select>
     <div class="grid3 durrow"><div><label for="onset">Onset</label><select id="onset"><option value="">—</option><option value="sudden">Sudden (sec–min)</option><option value="acute">Acute (hours)</option><option value="subacute">Subacute (days)</option><option value="gradual">Gradual / chronic</option></select></div>
     <div><label for="dur">Duration</label><div style="display:flex;gap:.3rem"><input id="dur" type="number" inputmode="decimal" placeholder="#" style="min-width:0"><select id="durU" style="width:3.7rem;flex:0 0 auto;padding-left:.3rem;padding-right:.1rem"><option value="h">h</option><option value="d" selected>d</option><option value="wk">wk</option></select></div></div>
@@ -1487,20 +2300,31 @@ function buildForm(){
     ${chipHTML('bed')}<label class="chk"><input type="checkbox" id="peLikely"> Clinician judgment: PE is the most likely diagnosis (Wells +3)</label>`, false);
 }
 function paintChips(){ document.querySelectorAll('.chip[data-f]').forEach(b=>{ const v=CH[b.dataset.f]; b.classList.toggle('p',v===1); b.classList.toggle('n',v===-1); b.setAttribute('aria-pressed', v===1?'true':v===-1?'mixed':'false'); });
-  const secs={hpi:['hx_gen','hx_cr','hx_gi','hx_gu','hx_neuro','hx_exp'],pmh:['pmh','meds'],pe:['pe_gen','pe_heent','pe_resp','pe_cvs','pe_abd','pe_neuro','pe_skin'],bed:['bed']};
-  Object.entries(secs).forEach(([s,gs])=>{ const n=gs.reduce((a,g)=>a+FGROUPS[g].f.filter(([id])=>CH[id]).length,0); const e=$('cnt-'+s); e.hidden=!n; e.textContent=n; }); }
-function paintSex(){ document.querySelectorAll('#sexseg button').forEach(b=>b.classList.toggle('on', b.dataset.sex===SEX)); $('pregrow').hidden = SEX!=='F'; }
+  const secs={hpi:['hx_gen','hx_cr','hx_gi','hx_gu','hx_neuro','hx_exp'],pmh:['pmh','meds'],pe:['pe_gen','pe_heent','pe_resp','pe_cvs','pe_abd','pe_neuro','pe_skin'],bed:['bed'],tr:TR_GROUPS};
+  ['tr_head','tr_neck','tr_chest','tr_abd','tr_spine','tr_ext','tr_preg'].forEach(g=>secs[g]=[g]);
+  Object.entries(secs).forEach(([s,gs])=>{ const n=gs.reduce((a,g)=>a+FGROUPS[g].f.filter(([id])=>CH[id]).length,0); const e=$('cnt-'+s); if(!e) return; e.hidden=!n; e.textContent=n; }); }
+function paintTrauma(){
+  $('sec-tr').hidden = !TR; const b=$('trMode'); b.classList.toggle('on',TR); b.setAttribute('aria-pressed',TR?'true':'false');
+  $('trs-tr_preg').hidden = SEX!=='F';
+  const pr=$('trPreg'), pg = SEX==='F' && $('preg').value==='yes'; pr.classList.toggle('p',pg); pr.setAttribute('aria-pressed',pg?'true':'false');
+  const a=num($('age').value); $('trCtx').textContent = [a!=null?(a>=65?'Age ≥ 65 – geriatric trauma thresholds apply':a<16?'Child – weight-based doses, PECARN':'Age '+a):'Age not entered (👤 Patient)', SEX==='F'?(pg?'pregnant'+($('ga').value?' '+$('ga').value+' wk':''):'pregnancy: '+$('preg').selectedOptions[0].text):''].filter(Boolean).join(' · ');
+  const E=$('gcsE').value, V=$('gcsV').value, M=$('gcsM').value; $('gcsTot').textContent = (E&&V&&M) ? `E${E} V${V} M${M} = ${+E + +V + +M}` : ($('gcs').value ? $('gcs').value+' (from Vital signs)' : '—'); }
+function syncMirror(fromVitals){ MIRROR.forEach(([a,b])=>{ if(fromVitals) $(a).value=$(b).value; else $(b).value=$(a).value; }); }
+const num = v => (v===''||v==null||isNaN(+v)) ? null : +v;
+function paintSex(){ document.querySelectorAll('#sexseg button').forEach(b=>b.classList.toggle('on', b.dataset.sex===SEX)); $('pregrow').hidden = SEX!=='F'; paintTrauma(); }
 const val = id => $(id).value;
 function readInput(){
   return { age:val('age'), sex:SEX, preg:SEX==='F'?val('preg'):'', ga:val('ga'), cc:val('cc')==='Other'?'':val('cc'), onset:val('onset'), dur:val('dur'), durU:val('durU'), feverDay:val('feverDay'),
     chips:Object.assign({},CH), text:val('text'), meds:val('meds'), peLikely:$('peLikely').checked,
     v:{hr:val('hr'),sbp:val('sbp'),dbp:val('dbp'),rr:val('rr'),t:val('t'),spo2:val('spo2'),gcs:val('gcs'),glu:val('glu'),gluU:val('gluU'),o2:$('o2').checked},
-    lab:{wbc:val('wbc'),neut:val('neut'),plt:val('plt'),hct:val('hct'),urea:val('urea'),ureaU:val('ureaU'),lactate:val('lactate')} };
+    lab:{wbc:val('wbc'),neut:val('neut'),plt:val('plt'),hct:val('hct'),urea:val('urea'),ureaU:val('ureaU'),lactate:val('lactate')},
+    tr:{on:TR, injT:val('injT'), injU:val('injU'), fallM:val('fallM'), wt:val('wt'), bd:val('bd'), tbsa:val('tbsa'), air:val('air'), bs:val('bs'), pup:val('pup'), gcsE:val('gcsE'), gcsV:val('gcsV'), gcsM:val('gcsM')} };
 }
 function clearForm(){
   document.querySelectorAll('#form input, #form textarea').forEach(e=>{ if(e.type==='checkbox') e.checked=false; else e.value=''; });
   $('preg').value='unk'; $('cc').value=''; $('onset').value=''; $('durU').value='d'; $('gluU').value='mg'; $('ureaU').value='mmol';
-  CH={}; SEX=''; PLAN=null; planTouched=false; paintChips(); paintSex();
+  ['air','bs','pup','gcsE','gcsV','gcsM'].forEach(k=>$(k).value=''); $('injU').value='h';
+  CH={}; SEX=''; PLAN=null; planTouched=false; TR=false; trManualOff=false; paintChips(); paintSex();
 }
 function loadCase(id){
   const c = CASES.find(x=>x.id===id); if(!c) return; clearForm(); const I=c.I;
@@ -1508,13 +2332,18 @@ function loadCase(id){
   ['age','ga','cc','onset','dur','durU','feverDay','text','meds'].forEach(k=>setv(k,I[k])); SEX=I.sex||''; if(I.preg) $('preg').value=I.preg;
   Object.entries(I.v||{}).forEach(([k,v])=>{ if(k==='o2') $('o2').checked=!!v; else setv(k,v); });
   Object.entries(I.lab||{}).forEach(([k,v])=>setv(k,v)); $('peLikely').checked=!!I.peLikely;
+  const T=I.tr||{}; ['injT','injU','fallM','wt','bd','tbsa','air','bs','pup','gcsE','gcsV','gcsM'].forEach(k=>setv(k,T[k]));
+  if(T.gcsE&&T.gcsV&&T.gcsM&&!(I.v||{}).gcs) $('gcs').value = +T.gcsE + +T.gcsV + +T.gcsM;
+  TR=!!T.on; syncMirror(true);
   CH=Object.assign({},I.chips); paintChips(); paintSex(); render();
 }
 
 // ---------- results ----------
 function srcHTML(s){ const ph=/PH CPG|\(PH\)|PH program|PH\)/.test(s); return `<div class="src">Source: ${ph?'<b>🇵🇭 PH</b> · ':''}${esc(s)}</div>`; }
-function tkHTML(c){ const [id,q,title]=c.tk; const where=`${TK_SEC[c.sec]||'S'+c.sec} › ${title}`;
-  return id ? `<div class="tk">📘 EM Toolkit: <a href="${TK_BASE}#o-${esc(id)}" data-tk="${esc(id)}" target="_blank" rel="noopener noreferrer">${esc(where)}</a> · search “${esc(q)}”</div>` : `<div class="tk">📘 EM Toolkit: ${esc(where)} · search “${esc(q)}”</div>`; }
+function tkHTML(c){ const [id,q,title,ts]=c.tk; const sn=ts||c.sec; const where=`${TK_SEC[sn]||'S'+sn} › ${title}`;
+  const also = (c.tkx||[]).map(([xid,xt,xs])=>`<a href="${TK_BASE}#o-${esc(xid)}" data-tk="${esc(xid)}" target="_blank" rel="noopener noreferrer" title="${esc(TK_SEC[xs]||'')}">${esc(xt)}</a>`).join(' · ');
+  return (id ? `<div class="tk">📘 EM Toolkit: <a href="${TK_BASE}#o-${esc(id)}" data-tk="${esc(id)}" target="_blank" rel="noopener noreferrer">${esc(where)}</a> · search “${esc(q)}”</div>` : `<div class="tk">📘 EM Toolkit: ${esc(where)} · search “${esc(q)}”</div>`)
+    + (also ? `<div class="tk">🔗 Related toolkit cards: ${also}</div>` : ''); }
 function cardCompact(r, top, rank){
   const c=r.c, pct=Math.max(4,Math.min(100, r.s/top*100)), t=tier(r.s);
   return `<div class="dx mnm cmp" data-id="${c.id}" id="m-${c.id}">
@@ -1541,15 +2370,17 @@ function card(r, top, opts){
    <details ${opts.open?'open':''}><summary>Diagnostics · ED treatment · disposition</summary>
      <div class="blk"><h4>🔬 Recommended diagnostics (prioritised)</h4><ol style="margin:.15rem 0 0;padding-left:1.2rem;font-size:.86rem">${c.dx.map(x=>`<li>${esc(x)}</li>`).join('')}</ol>${srcHTML(c.dxs)}</div>
      <div class="blk"><h4>💊 Initial ED treatment</h4><ul>${c.tx.map(x=>`<li>${vt(x)}</li>`).join('')}</ul>${srcHTML(c.txs)}</div>
-     <div class="blk"><h4>🏥 Disposition</h4><div style="font-size:.86rem">${esc(c.dispo)}</div></div>
+     <div class="blk"><h4>🏥 Disposition</h4><div style="font-size:.86rem">${esc(c.dispo)}</div>${c.dps?srcHTML(c.dps):''}</div>
      ${tkHTML(c)}
    </details>
    <label class="inc"><input type="checkbox" data-plan="${c.id}" ${inPlan?'checked':''}> Include this plan in the chart note</label>
   </div>`;
 }
-function hasInput(I){ return Object.keys(I.chips).length || I.text.trim() || I.cc || I.age || Object.values(I.v).some(x=>x&&x!=='mg') || Object.entries(I.lab).some(([k,x])=>x&&k!=='ureaU'); }
+function hasInput(I){ return I.tr.on || Object.keys(I.chips).length || I.text.trim() || I.cc || I.age || Object.values(I.v).some(x=>x&&x!=='mg') || Object.entries(I.lab).some(([k,x])=>x&&k!=='ureaU'); }
 function render(){
-  const I=readInput(); const D=derive(I); D.peLikely=I.peLikely; const R=scoreAll(D); const S=computeScores(D,R); const A=alerts(D);
+  let I=readInput(); let D=derive(I);
+  if(!TR && !trManualOff && D.F.trauma===1){ TR=true; paintTrauma(); toast('🩻 Trauma mode on – injury recorded'); I=readInput(); D=derive(I); }
+  D.peLikely=I.peLikely; const R=scoreAll(D); const S=computeScores(D,R); const A=alerts(D); paintTrauma();
   if(!planTouched) PLAN = new Set(R.ddx.slice(0,2).map(r=>r.id));
   last={I,D,R,S};
   // extracted chips
@@ -1559,6 +2390,7 @@ function render(){
   const top = Math.max(1, ...R.ddx.map(r=>r.s));
   const ddxIds = R.ddx.map(r=>r.id);
   let h = '';
+  if(TR) h += psfHTML(D);
   if(A.length) h += `<h2>⛑ Critical</h2>` + A.map(a=>`<div class="alert">${esc(a)}</div>`).join('');
   h += `<div class="disc" style="margin-top:.6rem"><b>Decision support, not a diagnosis.</b> Scores are rule-based weights, not probabilities. Clinical judgment overrides.</div>`;
   h += `<h2>🚩 Must not miss <span class="note">(dangerous, not excluded by the data)</span></h2><div id="mnm">` + (R.mnm.length ? R.mnm.map(r=>{ const k=ddxIds.indexOf(r.id)+1; return k ? cardCompact(r, top, k) : card(r, top, {pref:'m', open:false}); }).join('') : '<div class="empty">No must-not-miss condition reaches threshold with the current data.</div>') + `</div>`;
@@ -1569,6 +2401,17 @@ function render(){
   const keepNote = $('notebox') && !$('notebox').hidden;
   res.innerHTML = h;
   if(keepNote){ $('notebox').hidden=false; $('notebox').value=note(); }
+}
+// "Primary survey first" banner – life threats before any ranked list
+function psfHTML(D){
+  const rows=primarySurvey(D), nT=rows.filter(r=>r.st==='threat').length, tc=traumaCentre(D);
+  const ic={threat:'⚠',ok:'✓',unk:'?'};
+  return `<section class="psf" id="psf" aria-label="Primary survey first"><h2>⛑ Primary survey first – xABCDE${nT?` <span class="pn">${nT} life threat${nT>1?'s':''}</span>`:''}</h2>
+   <div class="note">Find and treat life threats in order before reading the differential. Re-assess after every intervention.</div>
+   ${rows.map(r=>`<div class="psr ${r.st}" data-ps="${r.k}"><span class="pk">${r.k}</span><div><b>${ic[r.st]} ${esc(r.t)}</b> – ${esc(r.msg)} <a class="psl" href="${TK_BASE}#o-${esc(r.tk)}" data-tk="${esc(r.tk)}" target="_blank" rel="noopener noreferrer">card ↗</a></div></div>`).join('')}
+   <div class="note"><b>Adjuncts:</b> monitor, eFAST, CXR + pelvic X-ray, VBG/ABG with lactate & base deficit, ECG, glucose, pregnancy test, type & crossmatch; urinary catheter only if no meatal blood; no nasal tube if basal skull / midface fracture. Tetanus status; analgesia.</div>
+   ${tc.length?`<div class="psr threat tc"><span class="pk">→</span><div><b>Trauma-centre criteria met:</b> ${esc(tc.join(' · '))}. Stabilise, call ahead, transfer (no deposit may be required – RA 10932).</div></div>`:''}
+   <div class="src">Source: ATLS 10th ed (2018) / 11th ed (2025, xABCDE) · ACS COT 2021 field triage (intl) · <b>🇵🇭 PH</b> · PCS BEST/BETTER trauma courses · DOH AO 2014-0002 / AO 2014-0007 · DO 2021-0001 · RA 10932 (PH)</div></section>`;
 }
 function note(){ const {I,D,R,S}=last; return chartNote(I,D,R,S,[...(PLAN||[])]); }
 function toast(m){ const t=$('toast'); t.textContent=m; t.classList.add('on'); clearTimeout(toast.h); toast.h=setTimeout(()=>t.classList.remove('on'),1800); }
@@ -1590,9 +2433,14 @@ function init(){
   $('example').addEventListener('change',e=>{ if(e.target.value){ loadCase(e.target.value); toast('Example loaded – fictional patient'); } });
   $('clear').addEventListener('click',()=>{ clearForm(); $('example').value=''; render(); toast('Cleared'); });
   $('jump').addEventListener('click',()=>$('results').scrollIntoView({behavior:'smooth'}));
+  $('trMode').addEventListener('click',()=>{ TR=!TR; trManualOff=!TR; paintTrauma(); if(TR){ syncMirror(true); $('sec-tr').open=true; } render(); toast(TR?'🩻 Trauma mode on – primary survey first':'Trauma mode off'); });
+  $('form').addEventListener('input',e=>{ const id=e.target.id; const m=MIRROR.find(x=>x[0]===id||x[1]===id); if(m){ if(id===m[0]) $(m[1]).value=$(m[0]).value; else $(m[0]).value=$(m[1]).value; }
+    if(id==='gcs' && $('gcsE').value && $('gcsV').value && $('gcsM').value && +$('gcs').value !== +$('gcsE').value + +$('gcsV').value + +$('gcsM').value){ ['gcsE','gcsV','gcsM'].forEach(k=>$(k).value=''); } });
+  $('form').addEventListener('change',e=>{ if(['gcsE','gcsV','gcsM'].includes(e.target.id)){ const E=$('gcsE').value,V=$('gcsV').value,M=$('gcsM').value; if(E&&V&&M) $('gcs').value= +E + +V + +M; } if(['preg','ga','age','gcsE','gcsV','gcsM'].includes(e.target.id)) paintTrauma(); });
   $('form').addEventListener('click',e=>{
     const b=e.target.closest('.chip[data-f]'); if(b){ const id=b.dataset.f; const v=CH[id]; if(v===1) CH[id]=-1; else if(v===-1) delete CH[id]; else CH[id]=1; paintChips(); render(); return; }
     const s=e.target.closest('[data-sex]'); if(s){ SEX = SEX===s.dataset.sex ? '' : s.dataset.sex; paintSex(); render(); return; }
+    if(e.target.id==='trPreg'){ const on = SEX==='F' && $('preg').value==='yes'; if(on){ $('preg').value='unk'; } else { SEX='F'; $('preg').value='yes'; } paintSex(); render(); if(!on) $('ga').focus(); return; }
     if(e.target.id==='apply' && last){ let n=0; Object.entries(last.D.ex.f).forEach(([id,v])=>{ if(CH[id]==null && FGROUP_OF[id]){ CH[id]=v; n++; } });
       if(last.D.ex.duration && !$('dur').value){ $('dur').value=last.D.ex.duration.n; $('durU').value=last.D.ex.duration.u; n++; }
       paintChips(); render(); toast(n?`Applied ${n} finding(s)`:'Nothing new to apply'); }
@@ -1614,7 +2462,7 @@ function init(){
     try{ const P=window.parent, T=P.EMTK; if(T && typeof T.openCard==='function' && T.openCard(a.dataset.tk, 'ddx')) e.preventDefault(); }catch(err){ /* cross-origin parent: default behaviour */ }
   });
   render();
-  window.DDX = {loadCase, render, clearForm, last:()=>last, note, cases:CASES, kb:KB, extract};
+  window.DDX = {loadCase, render, clearForm, last:()=>last, note, cases:CASES, kb:KB, extract, trauma:()=>TR};
 }
 document.readyState==='loading' ? document.addEventListener('DOMContentLoaded',init) : init();
 })();
