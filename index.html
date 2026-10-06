@@ -205,15 +205,27 @@
   .ecgframe{display:block;width:100%;height:calc(100vh - 12rem);height:calc(100dvh - 12rem);min-height:480px;border:1px solid var(--border);border-radius:10px;background:var(--bg)}
   .ecglink{margin:.1rem 0 .4rem}
   .stools{border-bottom:1px solid var(--border);padding-bottom:.2rem;margin-bottom:.2rem}
+  /* DDx Assist panel (tool › DDx Assist): iframe of ddx/ that fills the content area, same layout as the ECG reader */
+  body.ddxwide #main{max-width:none}
+  .ddxtab .ddxcard{padding:.6rem .7rem .7rem}
+  .ddxprint{display:none}
+  .ddxframe{display:block;width:100%;height:calc(100vh - 12rem);height:calc(100dvh - 12rem);min-height:480px;border:1px solid var(--border);border-radius:10px;background:var(--bg)}
+  #ddxBack{position:fixed;left:50%;transform:translateX(-50%);bottom:max(.8rem,env(safe-area-inset-bottom));z-index:40;display:flex;align-items:center;gap:.2rem;padding:0;border:1px solid var(--accent);border-radius:999px;background:var(--card);box-shadow:0 3px 14px rgba(0,0,0,.35);max-width:calc(100vw - 1.5rem)}
+  #ddxBack[hidden]{display:none}
+  #ddxBack button{border:none;background:transparent;color:var(--accent);font-weight:700;font-size:.9rem;padding:.5rem .4rem .5rem .9rem;min-height:40px;white-space:nowrap}
+  #ddxBack button.x{padding:.5rem .8rem .5rem .3rem;color:var(--muted);font-weight:400}
   @media(max-width:600px){
     .ecgtab .ecgcard{padding:.55rem 0 0;background:transparent}
     .ecgbar{padding:0 2.2rem 0 .1rem}
     .ecgnote{padding:0 .1rem}
     .ecgframe{border-left:none;border-right:none;border-radius:0}
+    .ddxtab .ddxcard{padding:.55rem 0 0;background:transparent}
+    .ddxframe{border-left:none;border-right:none;border-radius:0}
   }
   /* ===== print: current section (Ctrl+P) or the sample-section bundle (?print=…) – B/W, A4 ===== */
   @media print{
     .ecgframe,.ecgfull,.ecglink{display:none!important} .ecgprint{display:block;font-size:8pt}
+    .ddxframe,#ddxBack{display:none!important} .ddxprint{display:block;font-size:8pt}
     @page{size:A4;margin:11mm 10mm 12mm}
     body,body.dark{--bg:#fff;--fg:#000;--muted:#222;--card:#fff;--border:#888;--input:#fff;--accent:#000;--warn:#000;--ok:#000;--hl:#e6e6e6;--red:#000;--redbg:#fff;--peds:#000}
     body{font-size:9pt;background:#fff;color:#000}
@@ -850,6 +862,16 @@
   <div class="card" data-card="ensrc" data-title="Endocrine sources &amp; references">
     <h2>📚 Endocrine sources</h2>
     <div class="note">Umpierrez et al., Hyperglycemic crises in adults with diabetes – consensus report (ADA/EASD/JBDS/AACE/DTS), Diabetes Care 2024 · JBDS-IP DKA (2023) and HHS (2022) guidelines · ISPAD 2022 DKA &amp; hypoglycemia chapters · ADA Standards of Care 2025 (hypoglycemia classification) · Ross et al., ATA guidelines for hyperthyroidism and other causes of thyrotoxicosis 2016 · Burch &amp; Wartofsky 1993 (score) · Jonklaas et al., ATA guidelines for hypothyroidism 2014 (myxedema coma) · Bornstein et al., Endocrine Society primary adrenal insufficiency guideline 2016 · Endocrine Society/ESE glucocorticoid-induced adrenal insufficiency guideline 2024 · Society for Endocrinology adrenal crisis emergency guidance (2020). Tintinalli 9e Section 17 used only as a topic map.</div>
+  </div>
+</section>
+
+<!-- ============ TOOL: DDX ASSIST (embedded app, ddx/) – not tied to one Tintinalli section ============ -->
+<section id="tab-ddx" class="ddxtab" hidden>
+  <div class="card ddxcard" data-card="ddxa" data-title="DDx Assist (offline rule-based ED differential diagnosis support)" data-kw="DDx differential diagnosis assist undifferentiated patient chief complaint history exam findings must not miss red flags ranked differential workup Taglish Tagalog chart note NEWS2 qSOFA CURB-65 Wells PERC HEART Alvarado Centor dengue PCAP">
+    <div class="ecgbar"><h2>🩺 DDx Assist</h2><a id="ddxFull" class="ecgfull" href="ddx/" target="_blank" rel="noopener">Open full screen ↗</a></div>
+    <div class="note ecgnote"><b>Decision support only – not a diagnosis.</b> Rule-based list of possibilities with hand-set weights (not validated, not probabilities); clinical judgment overrides. Every dose is ⚠ VERIFY. Not a medical device. Runs on this device only (no network, no patient data stored). Toolkit links inside open the matching card here.</div>
+    <div class="ddxprint">DDx Assist is an interactive tool – open <b>ddx/</b> next to this toolkit (also available as a single offline file, ddx/ddx-standalone.html).</div>
+    <iframe id="ddxFrame" class="ddxframe" title="DDx Assist – differential diagnosis support" loading="lazy" data-src="ddx/index.html"></iframe>
   </div>
 </section>
 
@@ -2196,6 +2218,10 @@ function renderPulm(w){ renderAsthma(w); renderCOPD(); renderCAP(); renderPE(w);
 const SECTIONS = [{"id": "prehosp", "n": 1, "title": "Prehospital Care", "icon": "🚑", "status": "built", "panels": [["prehosp", "Prehospital & transfer"]], "topics": [["EMS systems & medical oversight", "new"], ["Prehospital equipment", "new"], ["Air medical transport", "new"], ["Mass gatherings", "new"], ["Interfacility transfer & referral (app – PH referral networks)", "new"]], "note": ""}, {"id": "disaster", "n": 2, "title": "Disaster Management", "icon": "🌀", "status": "built", "panels": [["disaster", "Disaster & MCI"]], "topics": [["Disaster preparedness & mass-casualty triage", "new"], ["Natural disasters (typhoon, flood, earthquake)", "new"], ["Bomb, blast & crush injuries", "new"], ["Chemical disasters & decontamination", "new"], ["Bioterrorism", "new"], ["Radiation injuries", "new"]], "note": ""}, {"id": "resus", "n": 3, "title": "Resuscitation", "icon": "🫀", "status": "built", "panels": [["anaph", "Anaphylaxis"], ["shock", "Shock, acid–base & HBO"]], "topics": [["Sudden cardiac death", "new"], ["Approach to nontraumatic shock", "new"], ["Approach to traumatic shock", "v1"], ["Allergy & anaphylaxis", "v1"], ["Acid–base disorders", "new"], ["Blood gases, pulse oximetry & capnography", "v1+new"], ["Fluids & electrolytes", "merged"], ["Cardiac rhythm disturbances", "v1+new"], ["Antiarrhythmic & antihypertensive pharmacology", "new"], ["Vasopressors & inotropes", "v1"], ["Hyperbaric oxygen therapy", "new"]], "note": "Shock-related cards live in Sepsis (S13), Trauma (S21) and Cardiovascular (S7)."}, {"id": "resusproc", "n": 4, "title": "Resuscitative Procedures", "icon": "⏱", "status": "built", "panels": [["resus", "CPR · ACLS/PALS · code timer"], ["airway", "Airway & RSI"], ["proc", "Access, monitoring & post-arrest"]], "topics": [["Basic CPR", "v1"], ["Defibrillation & electrical cardioversion", "v1"], ["Cardiac resuscitation (ACLS/PALS)", "v1"], ["Resuscitation in pregnancy", "new"], ["Post-cardiac arrest care", "v1+new"], ["Ethics of resuscitation", "new"], ["Noninvasive airway & supraglottic devices", "v1"], ["Tracheal intubation (RSI)", "v1"], ["Mechanical ventilation", "v1+merged"], ["Surgical airway (CICO)", "v1"], ["Vascular access", "new"], ["Hemodynamic monitoring", "new"], ["Cardiac pacing & implanted defibrillators", "v1+new"], ["Pericardiocentesis", "new"]], "note": ""}, {"id": "analgesia", "n": 5, "title": "Analgesia, Anesthesia & Procedural Sedation", "icon": "💉", "status": "built", "panels": [["analg", "Analgesia & sedation"]], "topics": [["Acute pain management", "new"], ["Local & regional anesthesia (incl. LAST)", "v1+new"], ["Procedural sedation & analgesia", "new"], ["Chronic pain in the ED", "new"]], "note": ""}, {"id": "wound", "n": 6, "title": "Wound Management", "icon": "🩹", "status": "built", "panels": [["wound", "Wound management"]], "topics": [["Wound evaluation", "new"], ["Wound preparation", "new"], ["Wound closure", "new"], ["Face & scalp lacerations", "new"], ["Arm, forearm & hand lacerations", "new"], ["Thigh, leg & foot lacerations", "new"], ["Soft-tissue foreign bodies", "new"], ["Puncture wounds & bites (incl. rabies PEP)", "new"], ["Post-repair care & tetanus prophylaxis", "new"]], "note": ""}, {"id": "cardio", "n": 7, "title": "Cardiovascular Disease", "icon": "❤️", "status": "built", "panels": [["cardio", "Cardiovascular"], ["ecg", "ECG reader"]], "topics": [["Chest pain", "new"], ["Acute coronary syndromes / STEMI timelines", "new"], ["Cardiogenic shock", "new"], ["Low-probability ACS (HEART score)", "new"], ["Syncope", ""], ["Acute heart failure", "new"], ["Valvular emergencies", ""], ["Cardiomyopathies & pericardial disease (pericarditis, myocarditis, tamponade)", "new"], ["Venous thromboembolism incl. PE", "merged"], ["Systemic hypertension / hypertensive emergencies", "new"], ["Pulmonary hypertension", ""], ["Aortic dissection & acute aortic syndromes (ADD-RS)", "new"], ["Aneurysmal disease (AAA)", "new"], ["Arterial occlusion", ""], ["Brady/tachy/unstable arrhythmias (app – linked to ACLS & code timer)", "v1+new"], ["ECG reader – offline automated draft read (app)", "new"]], "note": ""}, {"id": "pulm", "n": 8, "title": "Pulmonary Disorders", "icon": "🌬️", "status": "merged", "panels": [["pulm", "Pulmonary"]], "topics": [["Respiratory distress & respiratory failure (NIV/HFNC)", "merged"], ["Hemoptysis", "merged"], ["Acute bronchitis & upper respiratory infections", ""], ["Community-acquired & aspiration pneumonia", "merged"], ["Empyema & lung abscess / pleural effusion", "merged"], ["Tuberculosis", ""], ["Pneumothorax", "merged"], ["Acute asthma", "merged"], ["COPD exacerbation", "merged"], ["ARDS & lung-protective ventilation (app)", "merged"]], "note": ""}, {"id": "gi", "n": 9, "title": "Gastrointestinal Disorders", "icon": "🫃", "status": "built", "panels": [["gi", "GI disorders"]], "topics": [["Acute abdominal pain", "new"], ["Nausea & vomiting", "new"], ["Diarrhea", "new"], ["Constipation", "new"], ["Upper GI bleeding", "new"], ["Lower GI bleeding", "new"], ["Esophageal emergencies", "new"], ["Peptic ulcer disease & gastritis", "new"], ["Pancreatitis & cholecystitis", "new"], ["Hepatic disorders", "new"], ["Appendicitis", "new"], ["Diverticulitis", "new"], ["Bowel obstruction", "new"], ["Hernias", "new"], ["Anorectal disorders", "new"], ["GI procedures & devices", "new"], ["Complications of general surgery", "new"]], "note": ""}, {"id": "renal", "n": 10, "title": "Renal & Genitourinary Disorders", "icon": "🫘", "status": "merged", "panels": [["renal", "Renal & electrolytes"]], "topics": [["Acute kidney injury (KDIGO)", "merged"], ["Rhabdomyolysis", ""], ["End-stage renal disease / urgent dialysis", "merged"], ["UTI & hematuria", ""], ["Acute urinary retention", ""], ["Male genital problems (torsion etc.)", ""], ["Urologic stone disease", ""], ["Urologic procedure & device complications", ""], ["Hyperkalemia (app)", "v1+merged"], ["Hypo/hypernatremia, hypokalemia (app)", "merged"], ["Renal drug dosing (app)", "merged"]], "note": ""}, {"id": "obgyn", "n": 11, "title": "Obstetrics & Gynecology", "icon": "🤰", "status": "built", "panels": [["ob", "Obstetric emergencies"]], "topics": [["Abnormal uterine bleeding", ""], ["Pelvic pain in the non-pregnant patient", ""], ["Ectopic pregnancy & first-20-week emergencies", "new"], ["Comorbid disorders in pregnancy (VTE, trauma, drug safety)", "new"], ["Emergencies after 20 weeks & peripartum (pre-eclampsia, eclampsia, APH, PPH, AFE)", "new"], ["Emergency delivery (shoulder dystocia, cord prolapse, breech, newborn)", "new"], ["Vulvovaginitis", ""], ["Pelvic inflammatory disease", ""], ["Breast disorders", ""], ["Complications of gynecologic procedures", ""], ["Maternal cardiac arrest (app)", "new"]], "note": ""}, {"id": "peds", "n": 12, "title": "Pediatrics", "icon": "🧒", "status": "built", "panels": [["peds", "Pediatric tools"], ["pedsem", "Pediatric emergencies"]], "topics": [["Emergency care of children (weight estimate, vitals)", "v1"], ["Neonatal & pediatric transport", ""], ["Neonatal resuscitation", "new"], ["Pediatric resuscitation (PALS)", "v1"], ["Pediatric trauma", ""], ["Minor head injury & concussion", "new"], ["Pediatric cervical spine injury", "new"], ["Pediatric intubation & ventilation", "v1"], ["Pediatric vascular access", ""], ["Pediatric analgesia & sedation", ""], ["Neonatal emergencies", "new"], ["BRUE / ALTE", "new"], ["Sudden unexpected infant death", "new"], ["Fever & serious bacterial illness", "new"], ["Meningitis in children", "new"], ["Ear & mastoid", ""], ["Pediatric eye emergencies", ""], ["Nose & sinus", ""], ["Mouth & throat", ""], ["Neck masses", ""], ["Stridor & drooling", "new"], ["Wheezing (bronchiolitis, asthma)", "merged+new"], ["Pediatric pneumonia", "new"], ["Congenital & acquired heart disease", "new"], ["Syncope, dysrhythmias & pediatric ECG", ""], ["Vomiting, diarrhea & dehydration", "new"], ["Fluid & electrolyte therapy (maintenance)", "v1"], ["Pediatric abdominal pain", "new"], ["Pediatric GI bleeding", ""], ["Pediatric UTI", "new"], ["Pediatric urologic & gynecologic disorders", "new"], ["Pediatric renal emergencies", ""], ["Seizures in children", "v1"], ["Headache in children", ""], ["Altered mental status in children", ""], ["Pediatric orthopedic emergencies", "new"], ["Rashes in children", ""], ["Sickle cell disease in children", ""], ["Pediatric hematologic emergencies", ""], ["Pediatric oncologic emergencies", ""], ["Metabolic emergencies (inborn errors)", "new"], ["Diabetes in children (DKA)", "v1"], ["Children with special healthcare needs", ""], ["Behavioral disorders in children", ""], ["Child abuse & neglect", "new"]], "note": ""}, {"id": "id", "n": 13, "title": "Infectious Diseases", "icon": "🦠", "status": "built", "panels": [["sepsis", "Sepsis"], ["infect", "Infectious diseases"]], "topics": [["Sepsis & septic shock", "v1"], ["Soft-tissue infections", "new"], ["Sexually transmitted infections", "new"], ["Serious viral infections (dengue, measles, influenza)", "new"], ["HIV infection", "new"], ["Endocarditis", "new"], ["Tetanus", "new"], ["Rabies", "new"], ["Malaria", "new"], ["Food- & waterborne illness", "new"], ["Zoonoses (e.g. leptospirosis)", "new"], ["Global travelers", "new"], ["Occupational exposures & PEP", "new"]], "note": ""}, {"id": "neuro", "n": 14, "title": "Neurology", "icon": "🧠", "status": "built", "panels": [["neuro", "Neurology"]], "topics": [["Neurologic examination (GCS, NIHSS)", "v1"], ["Headache", "new"], ["Subarachnoid & intracerebral hemorrhage", "new"], ["Stroke syndromes & thrombolysis windows", "v1"], ["Altered mental status & coma", "new"], ["Ataxia & gait disturbance", "new"], ["Vertigo", "new"], ["Seizures & status epilepticus", "v1"], ["Acute peripheral neurologic disorders (GBS, myasthenia)", "new"], ["Chronic neurologic disorders", ""], ["CNS & spinal infections", "new"], ["CNS procedures & devices", ""]], "note": ""}, {"id": "tox", "n": 15, "title": "Toxicology", "icon": "☠️", "status": "built", "panels": [["tox", "Toxicology"]], "topics": [["General management of the poisoned patient", "new"], ["Cyclic antidepressants", "v1+new"], ["Atypical & serotonergic antidepressants / serotonin syndrome", "new"], ["MAO inhibitors", ""], ["Antipsychotics / NMS", "new"], ["Lithium", "new"], ["Barbiturates", ""], ["Benzodiazepines", "v1"], ["Non-benzodiazepine sedatives", ""], ["Alcohols (toxic alcohols, methanol)", "v1+new"], ["Opioids", "v1+new"], ["Cocaine & amphetamines", "new"], ["Hallucinogens", ""], ["Salicylates", "new"], ["Acetaminophen (paracetamol)", "v1+new"], ["NSAIDs", ""], ["Methylxanthines & nicotine", ""], ["Digoxin & cardiac glycosides", "v1+new"], ["β-blockers", "v1+new"], ["Calcium channel blockers", "v1+new"], ["Other antihypertensives (clonidine)", ""], ["Anticonvulsants", ""], ["Iron", "v1+new"], ["Hydrocarbons & volatile substances", "new"], ["Caustics & button batteries", "new"], ["Pesticides (organophosphates, carbamates, paraquat)", "v1+new"], ["Anticholinergics", "v1+new"], ["Metals & metalloids", ""], ["Industrial toxins (cyanide)", "v1"], ["Vitamins & herbals", ""], ["Antimicrobials (isoniazid)", "v1"], ["Dyshemoglobinemias (methemoglobinemia)", "v1+new"], ["Local anesthetic systemic toxicity (app)", "v1"]], "note": ""}, {"id": "env", "n": 16, "title": "Environmental Injuries", "icon": "🏝️", "status": "built", "panels": [["env", "Environmental"]], "topics": [["Cold injuries / frostbite", "new"], ["Hypothermia", "new"], ["Heat emergencies (heat stroke, cold-water immersion)", "new"], ["Bites & stings (spiders, scorpions, centipedes, Hymenoptera)", "new"], ["Snakebite (PH cobras, pit vipers, 20WBCT)", "new"], ["Marine trauma & envenomation (box jellyfish)", "new"], ["Diving disorders", "new"], ["Drowning", "new"], ["High-altitude illness", "new"], ["Thermal burns", "v1"], ["Chemical burns", ""], ["Electrical & lightning injuries", "new"], ["Mushroom poisoning", ""], ["Poisonous plants", ""], ["Carbon monoxide", "new"]], "note": ""}, {"id": "endo", "n": 17, "title": "Endocrine Disorders", "icon": "🍬", "status": "built", "panels": [["endo", "Endocrine"]], "topics": [["Type 1 diabetes", ""], ["Type 2 diabetes (drug-related hypoglycemia)", "new"], ["Diabetic ketoacidosis", "v1+new"], ["Ketoacidotic syndromes (alcoholic, euglycemic)", "new"], ["Hyperosmolar hyperglycemic state", "new"], ["Hypothyroidism & myxedema coma", "new"], ["Hyperthyroidism & thyroid storm", "new"], ["Adrenal insufficiency & adrenal crisis", "new"], ["Hypoglycemia (app)", "v1+new"]], "note": ""}, {"id": "heme", "n": 18, "title": "Hematologic & Oncologic Disorders", "icon": "🩸", "status": "built", "panels": [["heme", "Heme / Onc"]], "topics": [["Anemia & polycythemia", "new"], ["Hemostasis", "new"], ["Acquired bleeding disorders / anticoagulant reversal", "v1+new"], ["Clotting disorders", "new"], ["Hemophilias & von Willebrand disease", "new"], ["Sickle cell & hereditary hemolytic anemias", "new"], ["Acquired hemolytic anemia (TTP/HUS)", "new"], ["Transfusion therapy (MTP)", "v1+new"], ["Thrombotics & antithrombotics", ""], ["Emergency complications of malignancy", "new"]], "note": ""}, {"id": "eent", "n": 19, "title": "Eye, Ear, Nose, Throat & Oral Disorders", "icon": "👁️", "status": "built", "panels": [["eent", "EENT & oral"]], "topics": [["Eye emergencies", "new"], ["Ear disorders", "new"], ["Face & jaw emergencies", "new"], ["Nose & sinuses (epistaxis)", "new"], ["Oral & dental emergencies", "new"], ["Neck & upper airway (angioedema, deep neck infection)", "new"], ["Complications of airway devices", "new"]], "note": ""}, {"id": "derm", "n": 20, "title": "Dermatology", "icon": "🧴", "status": "built", "panels": [["derm", "Dermatology"]], "topics": [["Initial evaluation of skin disorders", "new"], ["Generalized skin disorders (SJS/TEN, DRESS)", "new"], ["Face & scalp", "new"], ["Trunk", "new"], ["Groin & skinfolds", "new"], ["Extremities", "new"]], "note": ""}, {"id": "trauma", "n": 21, "title": "Trauma", "icon": "🩻", "status": "built", "panels": [["trauma", "Trauma"]], "topics": [["Trauma in adults (primary survey)", "v1"], ["Trauma in older adults", "new"], ["Trauma in pregnancy", "new"], ["Head trauma / raised ICP", "v1+new"], ["Spine trauma", "new"], ["Facial trauma", "new"], ["Neck trauma", "new"], ["Pulmonary trauma (tension pneumothorax)", "merged+new"], ["Cardiac trauma", "new"], ["Abdominal trauma (eFAST)", "v1+new"], ["Flank & buttock trauma", "new"], ["Genitourinary trauma", "new"], ["Extremity trauma (hemorrhage control)", "v1"], ["Massive transfusion & TXA (app)", "v1"], ["Burn resuscitation (app)", "v1"]], "note": ""}, {"id": "ortho", "n": 22, "title": "Orthopedics", "icon": "🦴", "status": "built", "panels": [["ortho", "Orthopedics"]], "topics": [["Initial evaluation of orthopedic injuries", "new"], ["Hand & digit injuries", "new"], ["Wrist injuries", "new"], ["Elbow & forearm injuries", "new"], ["Shoulder & humerus injuries", "new"], ["Pelvic injuries", "new"], ["Hip & femur injuries", "new"], ["Knee injuries", "new"], ["Leg injuries", "new"], ["Ankle injuries", "new"], ["Foot injuries", "new"], ["Compartment syndrome", "new"]], "note": ""}, {"id": "msk", "n": 23, "title": "Musculoskeletal Disorders", "icon": "🦵", "status": "built", "panels": [["msk", "Musculoskeletal"]], "topics": [["Neck & back pain (red flags)", "new"], ["Shoulder pain", "new"], ["Hip & knee pain", "new"], ["Systemic rheumatic diseases", "new"], ["Non-traumatic hand disorders", "new"], ["Joints & bursae (septic arthritis, gout)", "new"], ["Soft-tissue problems of the foot", "new"]], "note": ""}, {"id": "psych", "n": 24, "title": "Psychosocial Disorders", "icon": "💬", "status": "built", "panels": [["psych", "Psychosocial"]], "topics": [["Mental health evaluation & disposition", "new"], ["Acute agitation", "new"], ["Mental health disorders of older adults", "new"], ["Mood & anxiety disorders / suicide risk", "new"], ["Psychoses", "new"], ["Eating disorders", "new"], ["Substance use disorders (alcohol withdrawal)", "new"]], "note": ""}, {"id": "abuse", "n": 25, "title": "Abuse & Assault", "icon": "🛡️", "status": "built", "panels": [["abuse", "Abuse & assault"]], "topics": [["Sexual assault", "new"], ["Intimate partner violence", "new"], ["Abuse of older & impaired adults", "new"]], "note": ""}, {"id": "special", "n": 26, "title": "Special Situations", "icon": "⭐", "status": "built", "panels": [["special", "Special situations"]], "topics": [["People who inject drugs", "new"], ["The transplant patient", "new"], ["Morbid obesity (dosing weights)", "new"], ["The transgender patient", "new"], ["Palliative care", "new"], ["Death notification & advance directives", "new"], ["Military medicine", "new"], ["Legal issues in emergency medicine", "new"]], "note": ""}];
 const PANEL_SEC = {}; SECTIONS.forEach(s=>s.panels.forEach(([p])=>PANEL_SEC[p]=s.id));
 const SEC = id => SECTIONS.find(s=>s.id===id);
+// Embedded tools that are not tied to one Tintinalli section (shown at the top of the drawer/sidebar).
+// The ECG reader also belongs to S7 (panel 'ecg'); DDx Assist is cross-sectional, so it gets a pseudo-section.
+const TOOL_PANELS = {ddx:{id:'tools', n:'', title:'Tools · DDx Assist', icon:'🩺', status:'built', panels:[['ddx','DDx Assist']], topics:[], tool:true}};
+const PSEC = t => TOOL_PANELS[t] || SEC(PANEL_SEC[t]);
 const PANEL_RE = {anaph:/Anaph/, resus:/Resus|Crash/, airway:/Airway/, cardio:/Cardio/, pulm:/Pulm/, renal:/Renal/, ob:/Obstet/, peds:/Pediatr/,
   sepsis:/Sepsis/, neuro:/Neuro/, tox:/Tox/, env:/Environ/, endo:/Endocr/, trauma:/Trauma/};
 const SAMPLE_PANELS = ['cardio','ob','tox','env','endo'];
@@ -2233,7 +2259,7 @@ Object.assign(REVIEW, {
 ['adeno','amio','lido','mag','bradyInf'].forEach(k=>{ if(D[k] && !D[k].flag) D[k].flag='cv-acls-drugs'; });
 
 // ======================= NAVIGATION =======================
-function curSecId(){ return tab==='stub' ? stubSec : PANEL_SEC[tab]; }
+function curSecId(){ return tab==='stub' ? stubSec : TOOL_PANELS[tab] ? null : PANEL_SEC[tab]; }
 function navList(filter){
   const f=(filter||'').trim().toLowerCase(), cs=curSecId();
   const h = SECTIONS.filter(s=>!f || (s.title+' '+s.topics.map(t=>t[0]).join(' ')).toLowerCase().includes(f)).map(s=>{
@@ -2241,14 +2267,19 @@ function navList(filter){
     let x=`<button class="sitem${on?' on':''}" data-nsec="${s.id}"${on?' aria-current="page"':''}><span class="snum">S${s.n}</span><span class="sname">${s.icon} ${esc(s.title)}</span>${badge(s.status)}</button>`;
     if(s.panels.length>1 && on) x+=`<div class="ppanel">${s.panels.map(([p,l])=>`<button data-npanel="${p}" class="${tab===p?'on':''}">${esc(l)}</button>`).join('')}</div>`;
     return x; }).join('');
-  const tool = !f || 'ecg reader ekg electrocardiogram rhythm strip tracing tools'.includes(f) || f.split(/\s+/).every(w=>'ecg reader ekg electrocardiogram rhythm strip tracing tools'.includes(w));
-  const tl = tool ? `<div class="stools"><button class="sitem${tab==='ecg'?' on':''}" data-npanel="ecg"${tab==='ecg'?' aria-current="page"':''}><span class="snum">🛠</span><span class="sname">📈 ECG reader</span><span class="sbadge built">Tool</span></button></div>` : '';
+  const TOOLS = [['ecg','📈 ECG reader','ecg reader ekg electrocardiogram rhythm strip tracing tools'],
+                 ['ddx','🩺 DDx Assist','ddx assist differential diagnosis undifferentiated must not miss tools']];
+  const tm = kw => !f || kw.includes(f) || f.split(/\s+/).every(w=>kw.includes(w));
+  const tb = TOOLS.filter(([,,kw])=>tm(kw)).map(([p,l])=>`<button class="sitem${tab===p?' on':''}" data-npanel="${p}"${tab===p?' aria-current="page"':''}><span class="snum">🛠</span><span class="sname">${l}</span><span class="sbadge built">Tool</span></button>`).join('');
+  const tl = tb ? `<div class="stools">${tb}</div>` : '';
   return (tl + h) || '<div class="note" style="padding:.4rem">No section matches.</div>';
 }
 const LEGEND = () => `<div class="legend">${badge('built')} built in this slice<br>${badge('merged')} merged from the Renal/Pulmonary build<br>${badge('v1')} cards from the original site<br>${badge('soon')} coming soon (planned topic list)<br>Map: 26 major sections of Tintinalli 9e – topic names only.</div>`;
 function refreshNav(){
   $('slist').innerHTML = navList($('sfilter').value);
   $('dlist').innerHTML = navList($('dfilter').value);
+  const tp=TOOL_PANELS[tab];
+  if(tp){ $('curSec').textContent = `${tp.icon} ${tp.panels[0][1]}`; $('subnav').innerHTML=''; if(!PRINTMODE) document.title = `${tp.panels[0][1]} – EM Toolkit (Tintinalli-mapped)`; return; }
   const s=SEC(curSecId());
   if(s){ $('curSec').textContent = `S${s.n} · ${s.title}`;
     $('subnav').innerHTML = s.panels.length>1 ? s.panels.map(([p,l])=>`<button data-npanel="${p}" class="${tab===p?'on':''}" aria-pressed="${tab===p}">${esc(l)}</button>`).join('') : '';
@@ -2258,10 +2289,11 @@ function navSetTab(t, sid){
   if(t==='stub'){ stubSec = sid || stubSec || 'prehosp'; store.set(K('stubSec'), stubSec); }
   if(!TABS.includes(t)) t='resus';
   tab=t; store.set(K('tab'),t);
-  if(t!=='stub'){ secPanel[PANEL_SEC[t]]=t; store.set(K('secPanel'),secPanel); }
+  if(t!=='stub' && PANEL_SEC[t]){ secPanel[PANEL_SEC[t]]=t; store.set(K('secPanel'),secPanel); }
   TABS.forEach(x=>{ const el=$('tab-'+x); if(el) el.hidden = x!==t; });
   if(t==='stub') renderStub();
   ecgShow(t==='ecg' && !PRINTMODE);
+  ddxShow(t==='ddx' && !PRINTMODE);
   refreshNav();
 }
 function navSec(id){
@@ -2303,7 +2335,7 @@ function renderPrintRev(){
 let SR=[], srAct=-1;
 function searchIndex(){
   const items=[];
-  Object.entries(CARDS).forEach(([id,c])=>{ const s=SEC(PANEL_SEC[c.tab]); if(!s) return;
+  Object.entries(CARDS).forEach(([id,c])=>{ const s=PSEC(c.tab); if(!s) return;
     items.push({kind:'card', id, title:c.title.replace(/&amp;/g,'&'), kw:c.el.dataset.kw||'', text:c.el.textContent, sec:s}); });
   SECTIONS.forEach(s=>{ items.push({kind:'sec', id:s.id, title:`S${s.n} ${s.title}`, kw:'section', text:s.topics.map(t=>t[0]).join(' '), sec:s});
     s.topics.forEach(([t,c])=>{ if(!c) items.push({kind:'topic', id:s.id, title:t, kw:'', text:'', sec:s}); }); });
@@ -2329,7 +2361,7 @@ function renderSR(){
   if(q.length<2){ box.hidden=true; $('search').setAttribute('aria-expanded','false'); return; }
   SR=doSearch(q); if(srAct>=SR.length) srAct=SR.length?0:-1; const toks=q.toLowerCase().split(/\s+/);
   box.innerHTML = SR.length ? SR.map((r,i)=>{
-    const where = r.kind==='topic' ? `S${r.sec.n} ${r.sec.title} · coming soon` : r.kind==='sec' ? `Section · ${r.sec.status==='soon'?'coming soon':BADGE[r.sec.status][1]}` : `S${r.sec.n} ${r.sec.title}`;
+    const where = r.sec.tool ? 'Tool · opens in the toolkit (or full screen)' : r.kind==='topic' ? `S${r.sec.n} ${r.sec.title} · coming soon` : r.kind==='sec' ? `Section · ${r.sec.status==='soon'?'coming soon':BADGE[r.sec.status][1]}` : `S${r.sec.n} ${r.sec.title}`;
     const sn = r.hitText && r.kind==='card' ? ` · ${hl(snippet(r.text,r.hitText),toks)}` : '';
     return `<button class="sr${i===srAct?' act':''}" role="option" id="sr${i}" aria-selected="${i===srAct}" data-sri="${i}"><div>${r.kind==='topic'?'🚧 ':r.kind==='sec'?'📂 ':''}${hl(r.title,toks)}</div><div class="note">${esc(where)}${sn}</div></button>`; }).join('')
     : `<div class="none">No match for “${esc(q)}”</div>`;
@@ -2407,7 +2439,7 @@ document.addEventListener('change',e=>{ const c=e.target.closest('[data-nc]'); i
 
 // ======================= PRINT =======================
 function fillPrintHead(list){
-  const names = list.map(p=>{ const s=SEC(PANEL_SEC[p]); return s?`S${s.n} ${s.title}`:p; }).filter((n,i,a)=>a.indexOf(n)===i);
+  const names = list.map(p=>{ const s=PSEC(p); return s?(s.tool?s.title:`S${s.n} ${s.title}`):p; }).filter((n,i,a)=>a.indexOf(n)===i);
   $('printhead').innerHTML = `<h1>EM Toolkit (Tintinalli-mapped) – ${list.length>=TABS.length-1?'full toolkit':list.join()===SAMPLE_PANELS.join()?'sample sections':list.length>1?'selected sections':esc(names[0])}</h1>
    <div class="note">${esc(names.join(' · '))} · printed ${new Date().toLocaleString('en-GB')} · ${ok(W())?`doses computed for ${peds()?'PEDIATRIC':'ADULT'} ${fmt(W())} kg`:'generic per-kg doses (no patient weight entered)'}.
    Reference aid only – verify clinically. Every ⚠ VERIFY item is pending owner review (listed at the end of each section). Original summaries citing public guidelines (AHA, ERC, ESC, ACOG, WHO, ADA/JBDS, ATA, Endocrine Society, WMS, ILCOR, AACT/EAPCCT, DOH/RITM/NPMCC); Tintinalli 9e used only as a topic map.</div>`;
@@ -2448,8 +2480,14 @@ function initNew(){
   $('printSample').addEventListener('click',()=>printPanels(SAMPLE_PANELS));
   if($('printAll')) $('printAll').addEventListener('click',()=>printPanels(TABS.filter(t=>t!=='stub')));
   addSecHeads(); initSearch();
-  $('theme').addEventListener('click',()=>setTimeout(ecgSyncTheme,0));
+  $('theme').addEventListener('click',()=>setTimeout(()=>{ ecgSyncTheme(); ddxSyncTheme(); },0));
   if($('ecgFrame')) $('ecgFrame').addEventListener('load',ecgSyncTheme);
+  if($('ddxFrame')) $('ddxFrame').addEventListener('load',ddxSyncTheme);
+  window.addEventListener('storage',e=>{ if(e.key===K('dark') && e.newValue!=null){ const d=JSON.parse(e.newValue); if(d!==document.body.classList.contains('dark')){ applyTheme(d); ecgSyncTheme(); } } });  // theme toggled inside DDx (shared em_dark key)
+  const bk=document.createElement('div'); bk.id='ddxBack'; bk.hidden=true; bk.setAttribute('role','navigation'); bk.setAttribute('aria-label','Return to DDx Assist');
+  bk.innerHTML='<button type="button" data-npanel="ddx">← Back to 🩺 DDx Assist</button><button type="button" class="x" aria-label="Dismiss">✕</button>';
+  document.body.append(bk); bk.querySelector('.x').addEventListener('click',()=>{ bk.hidden=true; });
+  window.addEventListener('hashchange',()=>deepLink(false));
   initTox(); initOB(); initEndo(); initCardio(); initEnv();
 }
 function renderNew(w){
@@ -2484,6 +2522,58 @@ function ecgSyncTheme(){
     const d=f.contentDocument, b=d&&d.getElementById('themeBtn');
     if(b && d.body.classList.contains('dark')!==dark) b.click(); }catch(e){}
 }
+// ======================= DDX ASSIST PANEL (ddx/ in an iframe, loaded on first open) =======================
+function ddxShow(on){
+  document.body.classList.toggle('ddxwide', on);
+  if(on && $('ddxBack')) $('ddxBack').hidden=true;
+  const f=$('ddxFrame'); if(!on || !f) return;
+  ddxSize();
+  if(document.readyState!=='loading') setTimeout(ddxScroll,0);
+  if(!f.getAttribute('src')) f.src=f.dataset.src; else ddxSyncTheme();
+}
+function ddxSize(){
+  const f=$('ddxFrame'), st=document.querySelector('.sticky'); if(!f || tab!=='ddx') return;
+  f.style.height = Math.max(420, window.innerHeight - (st?st.offsetHeight:0) - 10) + 'px';
+}
+function ddxScroll(){
+  const c=document.querySelector('.ddxcard'), st=document.querySelector('.sticky'); if(!c || tab!=='ddx') return;
+  window.scrollTo({top: Math.max(0, c.getBoundingClientRect().top + window.scrollY - (st?st.offsetHeight:0) - 6)});
+}
+window.addEventListener('resize',()=>ddxSize());
+function ddxSyncTheme(){
+  const f=$('ddxFrame'); if(!f || !f.getAttribute('src')) return;
+  const dark=document.body.classList.contains('dark');
+  try{ const d=f.contentDocument, b=d&&d.getElementById('theme'); if(b && d.body.classList.contains('dark')!==dark) b.click(); }catch(e){}
+}
+
+// ======================= DEEP LINKS: index.html#o-<cardId> (from DDx Assist) and ?q=<search> =======================
+function cardFor(id){
+  if(CARDS[id]) return id;
+  const el=document.getElementById('o-'+id), c=el&&el.closest('[data-card]');   // output div id inside a card
+  return c && CARDS[c.dataset.card] ? c.dataset.card : null;
+}
+function scrollToCard(id){   // like goCard(), but lands the card just below the sticky bar
+  const c=CARDS[id]; if(!c) return false;
+  closeDrawer(); setTab(c.tab);
+  const go=()=>{ const st=document.querySelector('.sticky'); window.scrollTo({top: Math.max(0, c.el.getBoundingClientRect().top + window.scrollY - (st?st.offsetHeight:0) - 8)}); };
+  go(); requestAnimationFrame(go); setTimeout(go,300);
+  c.el.classList.add('hl'); setTimeout(()=>c.el.classList.remove('hl'),2200);
+  return true;
+}
+function deepLink(startup){
+  let id=null; try{ const m=decodeURIComponent(location.hash||'').match(/^#o-([\w-]+)$/); if(m) id=cardFor(m[1]); }catch(e){}
+  if(id){ scrollToCard(id); return true; }
+  if(startup){ const q=location.search.match(/[?&]q=([^&#]*)/);
+    if(q){ let t=''; try{ t=decodeURIComponent(q[1].replace(/\+/g,' ')).trim(); }catch(e){}
+      if(t){ $('search').value=t; srAct=0; renderSR(); $('search').focus({preventScroll:true}); return true; } } }
+  return false;
+}
+function startupDeepLink(){ if(!/[?&]print=/.test(location.search)) deepLink(true); }
+// API for same-origin embedded tools (ddx/ iframe): open a toolkit card in this page.
+window.EMTK = { openCard(id, from){ const c=cardFor(String(id||'')); if(!c) return false;
+  scrollToCard(c);
+  if(from==='ddx' && $('ddxBack')) $('ddxBack').hidden=false;   // floating '← Back to DDx Assist' (DDx state is kept in the hidden iframe)
+  return true; } };
 function startupPrintParam(){
   const m=location.search.match(/[?&]print=([a-z,]+)/); if(!m) return;
   const list = m[1]==='sample' ? SAMPLE_PANELS : m[1]==='all' ? TABS.filter(t=>t!=='stub') : m[1].split(',').filter(p=>TABS.includes(p));
@@ -4212,7 +4302,7 @@ function applyMode(){
   $('sub').textContent = peds() ? 'Weight-based pediatric emergency reference' : 'Weight-based adult emergency reference';
 }
 document.querySelectorAll('#modeSeg button').forEach(b=>b.addEventListener('click',()=>{ mode=b.dataset.m; store.set(K('mode'),mode); applyMode(); renderAll(); }));
-const TABS=["prehosp", "disaster", "anaph", "shock", "resus", "airway", "proc", "analg", "wound", "cardio", "ecg", "pulm", "gi", "renal", "ob", "peds", "pedsem", "sepsis", "infect", "neuro", "tox", "env", "endo", "heme", "eent", "derm", "trauma", "ortho", "msk", "psych", "abuse", "special", "stub"];
+const TABS=["prehosp", "disaster", "anaph", "shock", "resus", "airway", "proc", "analg", "wound", "cardio", "ecg", "pulm", "gi", "renal", "ob", "peds", "pedsem", "sepsis", "infect", "neuro", "tox", "env", "endo", "heme", "eent", "derm", "trauma", "ortho", "msk", "psych", "abuse", "special", "ddx", "stub"];
 function setTab(t,sid){ return navSetTab(t,sid); }
 document.querySelectorAll('#algoSeg button').forEach(b=>b.addEventListener('click',()=>{ algo=b.dataset.a; store.set(K('algo'),algo); renderAlgo(W()); }));
 
@@ -4285,7 +4375,7 @@ function renderAll(){
 
 // ---------------- INIT ----------------
 initNew(); applyMode(); renderReview(); renderRenalPrintRev(); buildPulm(); renderRsiChk(); buildNIH(); renderBundle(); renderCodeLog();
-setTab(tab); renderAll(); renderFavs(); tickCode(); startupPrintParam();
+setTab(tab); renderAll(); renderFavs(); tickCode(); startupPrintParam(); startupDeepLink();
 window.addEventListener('storage',e=>{ if(e.key===K('code')){ CT=store.get(K('code'),CT); renderCodeLog(); tickCode(); } });
 </script>
 </body>

@@ -1,0 +1,221 @@
+// =====================================================================
+// DDx Assist – finding vocabulary + free-text lexicon (English / Tagalog / Taglish)
+// Every finding is tri-state in the UI: unknown · present (+) · absent (−).
+// =====================================================================
+'use strict';
+const FGROUPS = {
+  // ---- HPI symptom chips ----
+  'hx_gen':  {t:'General', sec:'hpi', f:[
+    ['fever','Fever (history)'],['chills','Chills / rigors'],['malaise','Malaise / weakness'],['myalgia','Myalgia / body aches'],
+    ['calf_pain','Calf muscle pain'],['arthralgia','Joint pains'],['retro_orb','Retro-orbital pain'],['anorexia','Anorexia'],
+    ['wt_loss','Weight loss'],['night_sweats','Night sweats'],['rash','Rash (macular / flushing)'],['pruritus','Itching'],
+    ['jaundice','Jaundice / yellow eyes'],['syncope','Syncope / near-syncope'],['dizziness','Dizziness / light-headed'],
+    ['lethargy','Lethargy / restlessness'],['bleeding','Mucosal bleeding (gum / nose)'],['oliguria','Decreased urine output']]},
+  'hx_cr':   {t:'Chest / breathing', sec:'hpi', f:[
+    ['chest_pain','Chest pain'],['cp_pressure','Pressure / heavy / crushing'],['cp_radiate','Radiates to arm / jaw'],
+    ['cp_back','Tearing / radiates to back'],['cp_pleuritic','Pleuritic (worse on breathing)'],['cp_exertional','Exertional'],
+    ['cp_positional','Better sitting forward'],['diaphoresis','Diaphoresis / cold sweat'],['palpitations','Palpitations'],
+    ['dyspnea','Dyspnea'],['orthopnea','Orthopnea / PND'],['cough','Cough'],['sputum','Productive sputum'],['hemoptysis','Hemoptysis'],
+    ['wheeze','Wheeze'],['chronic_cough','Cough ≥ 2 weeks'],['sore_throat','Sore throat'],['throat_tight','Throat tightness / hoarse voice']]},
+  'hx_gi':   {t:'Abdomen / GI', sec:'hpi', f:[
+    ['abd_pain','Abdominal pain'],['epi_pain','Epigastric pain'],['ruq_pain','RUQ pain'],['rlq_pain','RLQ pain'],['llq_pain','LLQ / pelvic pain'],
+    ['diffuse_abd','Diffuse abdominal pain'],['migration','Periumbilical → RLQ migration'],['flank_pain','Flank pain (colicky)'],
+    ['abd_back','Abdominal pain radiating to back'],['pain_oop','Pain out of proportion to exam'],['nausea','Nausea'],['vomiting','Vomiting'],
+    ['persist_vomit','Persistent vomiting / cannot keep fluids'],['diarrhea','Diarrhea'],['dysentery','Bloody / mucoid diarrhea'],
+    ['hematemesis','Hematemesis / coffee-ground'],['melena','Melena'],['hematochezia','Hematochezia'],['obstipation','No stool / flatus'],
+    ['distension','Abdominal distension'],['fatty_meal','Pain after fatty meal'],['constipation','Constipation']]},
+  'hx_gu':   {t:'GU / OB-GYN', sec:'hpi', f:[
+    ['dysuria','Dysuria'],['frequency','Frequency / urgency'],['hematuria','Hematuria'],['vag_bleed','Vaginal bleeding'],
+    ['amenorrhea','Missed / late period'],['vag_discharge','Vaginal discharge'],['testis_pain','Testicular / scrotal pain'],
+    ['polyuria','Polyuria'],['polydipsia','Polydipsia']]},
+  'hx_neuro':{t:'Neuro', sec:'hpi', f:[
+    ['headache','Headache'],['thunderclap','Sudden "worst ever" headache'],['neck_stiff_sx','Neck stiffness (complaint)'],
+    ['photophobia','Photophobia'],['confusion','Confusion / altered sensorium'],['seizure','Seizure'],['focal_weak','One-sided weakness / numbness'],
+    ['facial_droop','Facial droop'],['speech','Slurred speech / aphasia'],['vision','Vision loss / diplopia'],['vertigo','Vertigo (spinning)'],
+    ['tremor','Tremor / anxiety / heat intolerance']]},
+  'hx_exp':  {t:'Exposures / triggers', sec:'hpi', f:[
+    ['allergen','Exposure to likely allergen (food, drug, sting)'],['flood','Flood / mud wading (2–30 d ago)'],['animal_bite','Dog / cat bite or scratch'],
+    ['snake_bite','Snakebite'],['pesticide','Pesticide / insecticide exposure'],['overdose','Drug overdose / ingestion'],['apap_od','Paracetamol ingestion'],
+    ['alcohol','Heavy alcohol use'],['lambanog','Home-brewed / illicit alcohol (lambanog)'],['heat_exp','Heat exposure / exertion'],
+    ['travel_mal','Travel to malaria area (e.g. Palawan forest)'],['tb_contact','TB contact'],['unsafe_food','Street food / unsafe water'],
+    ['dengue_area','Dengue cases in household / barangay'],['dirty_wound','Dirty / puncture wound'],['missed_insulin','Missed insulin / DM meds'],
+    ['infection_sx','Recent infection / illness']]},
+  // ---- PMH / risk factors ----
+  'pmh':     {t:'PMH / risk factors', sec:'pmh', f:[
+    ['htn','Hypertension'],['dm','Diabetes'],['dm1','Type 1 DM'],['smoker','Smoker'],['dyslipid','Dyslipidemia'],['obesity','Obesity'],
+    ['cad','Known CAD / prior MI'],['fam_cad','Family hx premature CAD'],['stroke_hx','Prior stroke / TIA'],['af','Atrial fibrillation'],
+    ['hf','Heart failure'],['copd','COPD'],['asthma','Asthma'],['ckd','CKD'],['cirrhosis','Cirrhosis / liver disease'],['malignancy','Active cancer'],
+    ['immobil','Surgery / immobilization ≤ 4 wk'],['dvt_hx','Prior DVT / PE'],['postpartum','Postpartum ≤ 6 wk'],['immuno','HIV / immunosuppressed'],
+    ['tb_hx','Prior TB'],['gallstones','Gallstones'],['pud','Peptic ulcer disease'],['ctd','Marfan / bicuspid valve / aortic dz'],
+    ['ectopic_rf','Prior ectopic / PID / tubal surgery / IVF'],['iud','IUD in place'],['epilepsy','Epilepsy'],['stones','Kidney stones'],
+    ['thyroid','Hyperthyroidism'],['migraine_hx','Migraine history'],['atopy','Atopy / prior anaphylaxis']]},
+  'meds':    {t:'Medications', sec:'meds', f:[
+    ['m_anticoag','Anticoagulant'],['m_antiplt','Antiplatelet'],['m_insulin','Insulin'],['m_oha','Oral hypoglycemic'],['m_sglt2','SGLT2 inhibitor'],
+    ['m_steroid','Steroids'],['m_nsaid','NSAIDs'],['m_estrogen','OCP / estrogen'],['m_bb','β-blocker / CCB'],['m_diuretic','Diuretic'],['m_abx','Recent antibiotics']]},
+  // ---- Physical exam by system ----
+  'pe_gen':  {t:'General', sec:'pe', f:[
+    ['toxic','Ill / toxic-looking'],['pallor','Pallor'],['dehydration','Dry mucosa / poor turgor'],['cool_periph','Cold clammy skin / CRT > 2 s'],['cachexia','Cachexia']]},
+  'pe_heent':{t:'HEENT / neck', sec:'pe', f:[
+    ['conj_suff','Conjunctival suffusion'],['icterus','Scleral icterus'],['exudate','Tonsillar exudate / swelling'],['cerv_nodes','Tender anterior cervical nodes'],
+    ['angioedema','Lip / tongue / face swelling'],['miosis','Pinpoint pupils'],['stridor','Stridor'],['jvd','Raised JVP'],['neck_stiff','Neck stiffness / meningism'],
+    ['ptosis','Ptosis / bulbar weakness'],['goiter','Goiter']]},
+  'pe_resp': {t:'Respiratory', sec:'pe', f:[
+    ['crackles_focal','Focal crackles'],['crackles_bilat','Bilateral crackles'],['wheeze_pe','Wheeze on exam'],['bronchial','Bronchial breath sounds / dullness'],
+    ['dec_bs_uni','Unilateral ↓ breath sounds'],['hyperres','Hyperresonance'],['accessory','Accessory muscles / speaks in words'],['silent_chest','Silent chest'],
+    ['trach_dev','Tracheal deviation']]},
+  'pe_cvs':  {t:'Cardiovascular', sec:'pe', f:[
+    ['murmur','New murmur'],['s3','S3 / gallop'],['pulse_deficit','Pulse deficit / arm SBP Δ > 20'],['irregular','Irregularly irregular pulse'],
+    ['muffled','Muffled heart sounds'],['rub','Pericardial rub'],['edema','Bilateral leg edema'],['dvt_signs','Unilateral leg swelling / calf tenderness']]},
+  'pe_abd':  {t:'Abdomen / pelvis', sec:'pe', f:[
+    ['murphy','RUQ tenderness / Murphy sign'],['epi_tender','Epigastric tenderness'],['rlq_tender','RLQ (McBurney) tenderness'],['llq_tender','LLQ / suprapubic tenderness'],
+    ['rebound','Rebound / guarding'],['rigid','Board-like rigidity'],['rovsing','Rovsing / psoas sign'],['distended','Distended / tympanitic'],
+    ['hepatomegaly','Tender hepatomegaly'],['splenomegaly','Splenomegaly'],['ascites','Ascites / pleural effusion (fluid accumulation)'],
+    ['cva_tender','CVA (kidney-punch) tenderness'],['adnexal','Adnexal tenderness / mass'],['cmt','Cervical motion tenderness'],
+    ['pulsatile','Pulsatile abdominal mass'],['high_testis','High-riding testis / absent cremasteric'],['blood_dre','Melena / blood on DRE']]},
+  'pe_neuro':{t:'Neuro', sec:'pe', f:[
+    ['kernig','Kernig / Brudzinski'],['hemiparesis','Hemiparesis'],['aphasia','Aphasia / dysarthria (exam)'],['facial_pe','Facial palsy (exam)'],
+    ['fasciculation','Fasciculations'],['ataxia','Ataxia / central signs'],['hyperreflexia','Hyperreflexia / clonus'],['kussmaul','Kussmaul breathing'],['trismus','Trismus / generalized spasms']]},
+  'pe_skin': {t:'Skin / extremities', sec:'pe', f:[
+    ['petechiae','Petechiae / purpura / + tourniquet test'],['urticaria','Urticaria'],['cellulitis','Erythema / warmth / swelling'],
+    ['crepitus','Crepitus / bullae / skin necrosis'],['fang_marks','Fang marks / local swelling'],['hot_joint','Hot swollen joint'],
+    ['secretions','Salivation / lacrimation / bronchorrhea'],['bleed_site','Bleeding from puncture sites']]},
+  // ---- Optional bedside results ----
+  'bed':     {t:'Bedside results (optional)', sec:'bed', f:[
+    ['ecg_ste','ECG: ST elevation / new LBBB'],['ecg_std','ECG: ST depression / T inversion'],['ecg_af','ECG: AF / SVT'],['ecg_rv','ECG: S1Q3T3 / RV strain'],
+    ['ecg_diffuse','ECG: diffuse STE + PR depression'],['trop_pos','Troponin elevated'],['plt_low','Platelets ≤ 100k'],['hct_rise','Hct rising ≥ 20%'],
+    ['wbc_low','WBC < 5k (leukopenia)'],['ketones','Ketones ≥ 2+ / β-OHB ≥ 3'],['acidosis','pH < 7.3 or HCO₃ < 18'],['ua_pos','UA: pyuria / nitrite +'],
+    ['hcg_pos','Pregnancy test positive'],['hcg_neg','Pregnancy test negative'],['lipase_high','Lipase / amylase > 3× ULN'],['cr_high','Creatinine elevated'],
+    ['ns1_pos','Dengue NS1 / IgM positive'],['bili_high','Bilirubin elevated'],['cxr_consol','CXR: consolidation'],['cxr_ptx','CXR / US: pneumothorax'],
+    ['cxr_edema','CXR: pulmonary edema / B-lines'],['cxr_mediast','CXR: widened mediastinum'],['cxr_cavity','CXR: upper-lobe / cavitary infiltrate'],
+    ['us_fluid','POCUS: free fluid (FAST +)'],['us_rv','POCUS: RV dilation'],['us_effusion','POCUS: pericardial effusion'],['us_aaa','POCUS: aorta > 3 cm'],
+    ['us_gb','US: gallstones + wall thickening'],['xpert_pos','Xpert MTB/RIF positive']]},
+};
+const FLABEL = {}; const FGROUP_OF = {};
+Object.entries(FGROUPS).forEach(([g,G])=>G.f.forEach(([id,l])=>{ FLABEL[id]=l; FGROUP_OF[id]=g; }));
+// derived (vitals / demographics) labels
+Object.assign(FLABEL, {
+  hr_gt100:'HR > 100', hr_ge125:'HR ≥ 125', hr_lt60:'HR < 60', sbp_lt90:'SBP < 90', sbp_le100:'SBP ≤ 100', dbp_le60:'DBP ≤ 60', htn_sev:'BP ≥ 180/120', bp_ge140:'BP ≥ 140/90', rr_lt12:'RR < 12', ga_ge20:'Gestation ≥ 20 wk',
+  rr_ge22:'RR ≥ 22', rr_ge30:'RR ≥ 30', t_ge38:'T ≥ 38 °C', t_ge39:'T ≥ 39 °C', t_ge40:'T ≥ 40 °C', t_lt36:'T < 36 °C', spo2_lt94:'SpO₂ < 94 %',
+  spo2_lt90:'SpO₂ < 90 %', gcs_lt15:'GCS < 15', gcs_le8:'GCS ≤ 8', glu_high:'Glucose > 250 mg/dL', glu_vhigh:'Glucose > 600 mg/dL', glu_low:'Glucose < 70 mg/dL',
+  narrow_pp:'Pulse pressure ≤ 20', si_ge1:'Shock index ≥ 1', rel_brady:'Relative bradycardia (T ≥ 38.5, HR < 100)', wbc_high:'WBC > 10k',
+  wbc_vhigh:'WBC > 15k', neut_high:'Neutrophils > 75 %', urea_high:'Urea > 7 mmol/L (BUN > 19)', lactate_high:'Lactate ≥ 2', lactate_4:'Lactate ≥ 4',
+  age_ge50:'Age ≥ 50', age_ge65:'Age ≥ 65', age_lt40:'Age < 40', age_lt16:'Age < 16', male:'Male', female:'Female', repro_f:'Female 12–50 y', pregnant:'Pregnant',
+  onset_sudden:'Sudden onset (seconds–minutes)', dur_lt24h:'Duration < 24 h', dur_le7d:'Duration ≤ 7 d', dur_gt7d:'Duration > 7 d', dur_ge14d:'Duration ≥ 14 d',
+  fever_d3_7:'Fever day 3–7 (critical phase window)', fever_any:'Fever (history or measured)'
+});
+
+// ---------------- Free-text lexicon ----------------
+// [regex source (matched on lower-cased text, word-ish boundaries), finding ids]
+// Tagalog stems are written to catch common affixed forms (nilalagnat, inuubo, nagtatae, nagsusuka …).
+const LEX = [
+  // fever / systemic
+  ['lagnat|nilalagnat|nilagnat|sinat|sinisinat|mainit ang katawan|fever|febrile|pyrexia', ['fever']],
+  ['giniginaw|ginaw|nanginginig sa lamig|chills|rigors?', ['chills']],
+  ['panghihina|nanghihina|mahina ang katawan|matamlay|malaise|weakness|fatigue', ['malaise']],
+  ['pananakit ng katawan|masakit ang katawan|sakit ng katawan|body ?aches?|myalgias?|ngalay', ['myalgia']],
+  ['masakit ang binti|sakit ng binti|pananakit ng binti|masakit ang alak-?alakan|calf (pain|tenderness)|calf myalgia', ['calf_pain']],
+  ['masakit ang kasukasuan|joint pains?|arthralgias?|rayuma', ['arthralgia']],
+  ['(?:masakit|sakit|kirot)?\\s*(?:sa\\s+)?likod ng mata|retro-?orbital|behind (?:the )?eyes?', ['retro_orb']],
+  ['walang gana kumain|walang ganang kumain|walang gana|anorexia|poor appetite', ['anorexia']],
+  ['pumayat|pumapayat|nangayayat|weight loss|lost weight', ['wt_loss']],
+  ['pinagpapawisan sa gabi|pawis sa gabi|night sweats?', ['night_sweats']],
+  ['pantal|rashes|rash', ['rash']],
+  ['nangangati|kati|itchy|itching|pruritus', ['pruritus']],
+  ['naninilaw|paninilaw|dilaw ang mata|dilaw ang balat|jaundice|yellowish|icteric', ['jaundice']],
+  ['nahimatay|hinimatay|himatay|nawalan ng malay|syncope|fainted|passed out', ['syncope']],
+  ['nahihilo|hilo|dizzy|dizziness|light-?headed', ['dizziness']],
+  ['dumudugo ang gilagid|dugo sa gilagid|balinguyngoy|gum bleeding|epistaxis|nosebleed', ['bleeding']],
+  ['konti ang ihi|kaunti ang ihi|hindi umiihi|oliguria|decreased urine', ['oliguria']],
+  // chest / resp
+  ['pananakit ng dibdib|masakit ang dibdib|sakit sa dibdib|sakit ng dibdib|kirot sa dibdib|chest pain|chest discomfort', ['chest_pain']],
+  ['parang dinadaganan|mabigat sa dibdib|bigat sa dibdib|(?<!blood )pressure|crushing|squeezing|heaviness', ['cp_pressure']],
+  ['papunta sa braso|radiat\\w* to (the )?(left )?(arm|jaw)|jaw pain', ['cp_radiate']],
+  ['tearing|ripping|tumatagos sa likod|radiat\\w* to (the )?back', ['cp_back']],
+  ['pleuritic|masakit pag huminga|masakit kapag humihinga', ['cp_pleuritic']],
+  ['pinagpapawisan nang malamig|malamig na pawis|pawis na pawis|diaphore\\w*|cold sweat', ['diaphoresis']],
+  ['kabog ng dibdib|kumakabog|palpitasyon|palpitations?', ['palpitations']],
+  ['hirap huminga|hirap sa paghinga|nahihirapang huminga|hinihingal|hingal|kinakapos ng hininga|kapos sa hininga|sikip ng dibdib|dyspnea|shortness of breath|sob|difficulty breathing', ['dyspnea']],
+  ['hindi makahiga|orthopnea|pnd|paroxysmal nocturnal', ['orthopnea']],
+  ['ubo|inuubo|umuubo|cough\\w*', ['cough']],
+  ['plema|may plema|productive|sputum|phlegm', ['sputum']],
+  ['umuubo ng dugo|dugo sa plema|hemoptysis|coughing (up )?blood', ['hemoptysis']],
+  ['hika|asthma attack|wheez\\w*|humahagok|halak', ['wheeze']],
+  ['(2|dalawang|two|3|tatlong) ?(linggo|weeks?).{0,15}(ubo|cough)|(ubo|cough).{0,25}(2|dalawang|two|3|tatlong|ilang) ?(linggo|weeks?)|matagal na ubo|chronic cough', ['chronic_cough']],
+  ['masakit ang lalamunan|sakit ng lalamunan|sore throat|pharyngitis', ['sore_throat']],
+  ['makati ang lalamunan|sumisikip ang lalamunan|throat tightness|hoarse', ['throat_tight']],
+  // abdomen
+  ['sakit ng tiyan|masakit ang tiyan|pananakit ng tiyan|sumasakit ang tiyan|abdominal pain|stomach ache|tummy ache', ['abd_pain']],
+  ['sikmura|hapdi ng sikmura|epigastric|heartburn|ulcer pain', ['epi_pain','abd_pain']],
+  ['kanang itaas ng tiyan|right upper quadrant|ruq', ['ruq_pain','abd_pain']],
+  ['kanang ibaba ng tiyan|right lower quadrant|rlq|right iliac', ['rlq_pain','abd_pain']],
+  ['puson|pelvic pain|left lower quadrant|llq|hypogastric', ['llq_pain']],
+  ['lumipat sa kanan|migrat\\w* to (the )?(rlq|right)|periumbilical', ['migration']],
+  ['masakit ang tagiliran|sakit sa tagiliran|tagiliran|flank pain|renal colic', ['flank_pain']],
+  ['nasusuka|naduduwal|nausea|nauseous', ['nausea']],
+  ['nagsusuka|pagsusuka|sumusuka|suka nang suka|vomit\\w*|emesis', ['vomiting']],
+  ['suka nang suka|hindi makakain|hindi makainom|persistent vomiting|intractable vomiting|cannot tolerate (oral|fluids)', ['persist_vomit','vomiting']],
+  ['pagtatae|nagtatae|natatae|lbm|loose bowel|diarrh\\w*|watery stools?', ['diarrhea']],
+  ['dugo sa dumi.{0,10}(tae|pagtatae)|duguang pagtatae|bloody diarrh\\w*|dysentery|mucoid', ['dysentery','diarrhea']],
+  ['nagsuka ng dugo|suka na may dugo|hematemesis|coffee[- ]ground', ['hematemesis']],
+  ['itim na dumi|maitim na dumi|melena|black stools?|tarry', ['melena']],
+  ['dugo sa dumi|may dugo ang dumi|hematochezia|rectal bleeding|bright red blood', ['hematochezia']],
+  ['hindi makadumi|hindi nakakautot|obstipation|no flatus', ['obstipation']],
+  ['kabag|lumalaki ang tiyan|bloat\\w*|distension|distended', ['distension']],
+  ['matatabang pagkain|fatty (meal|food)|after eating (lechon|fatty)', ['fatty_meal']],
+  ['tibi|constipat\\w*', ['constipation']],
+  // GU / OB
+  ['masakit umihi|mahapdi umihi|hapdi sa pag-?ihi|mahapdi ang pag-?ihi|balisawsaw|dysuria|burning (on|with) urination', ['dysuria']],
+  ['madalas umihi|ihi nang ihi|frequency|urgency', ['frequency']],
+  ['dugo sa ihi|mapulang ihi|hematuria|tea-?colou?red urine', ['hematuria']],
+  ['dinudugo sa ari|pagdurugo sa ari|vaginal bleeding|spotting|regla na malakas', ['vag_bleed']],
+  ['hindi dinadatnan|hindi pa dinadatnan|delayed (mens|period)|missed period|atrasado ang regla|late period|amenorrh\\w*', ['amenorrhea']],
+  ['buntis|nagdadalang-?tao|pregnant', ['hcg_pos']],
+  ['discharge sa ari|vaginal discharge', ['vag_discharge']],
+  ['masakit ang bayag|bayag|testicular pain|scrotal pain', ['testis_pain']],
+  ['ihi nang ihi|polyuria', ['polyuria']],
+  ['uhaw na uhaw|laging nauuhaw|polydipsia|very thirsty', ['polydipsia']],
+  // neuro
+  ['sakit ng ulo|masakit ang ulo|sumasakit ang ulo|pananakit ng ulo|headache|cephalgia', ['headache']],
+  ['biglang sumakit ang ulo|pinakamasakit na sakit ng ulo|worst headache|thunderclap', ['thunderclap','headache']],
+  ['paninigas ng batok|matigas ang batok|matigas ang leeg|stiff neck|neck stiffness', ['neck_stiff_sx']],
+  ['silaw|photophobia', ['photophobia']],
+  ['nalilito|wala sa sarili|tulala|lito|confus\\w*|disorient\\w*|altered sensorium', ['confusion']],
+  ['kombulsyon|kumbulsyon|nangisay|nangingisay|seizures?|convuls\\w*', ['seizure']],
+  ['hindi maigalaw|nanghihina ang (kalahati|kanan|kaliwa)|one-?sided weakness|hemiparesis|left-?sided weakness|right-?sided weakness', ['focal_weak']],
+  ['tabingi ang mukha|ngiwi ang mukha|facial droop|facial asymmetry', ['facial_droop']],
+  ['bulol|hindi makapagsalita|slurred speech|aphasia|dysarthria', ['speech']],
+  ['malabo ang paningin|nawalan ng paningin|doble ang paningin|diplopia|vision loss|blurred vision', ['vision']],
+  ['umiikot ang paligid|vertigo|spinning', ['vertigo']],
+  // exposures
+  ['allergic|allergy|ate shrimp|ate peanuts?|kumain ng hipon|bee sting|kinagat ng bubuyog|new drug', ['allergen']],
+  ['namamaga ang labi|namamaga ang mata|lip swelling|tongue swelling|angioedema', ['angioedema']],
+  ['tagulabay|hives|urticaria|wheals', ['urticaria']],
+  ['baha|lumusong|nilusong|floodwater|flood|wading', ['flood']],
+  ['kinagat ng aso|kagat ng aso|kinagat ng pusa|kalmot ng pusa|dog bite|cat bite|cat scratch', ['animal_bite']],
+  ['tuklaw|tinuklaw|kinagat ng ahas|ahas|snake ?bite|cobra', ['snake_bite']],
+  ['pesticide|insecticide|organophosph\\w*|carbamate|lason sa daga|uminom ng lason|baygon|folidol|malathion', ['pesticide']],
+  ['overdose|uminom ng maraming gamot|ininom lahat ng gamot|intentional ingestion', ['overdose']],
+  ['paracetamol|acetaminophen|biogesic', ['apap_od']],
+  ['lasing|nag-?inom|alcoholic|heavy drink\\w*|alcohol', ['alcohol']],
+  ['lambanog|tuba|bahalina|methanol', ['lambanog']],
+  ['init ng araw|bilad sa araw|nainitan|heat ?stroke|heat exposure', ['heat_exp']],
+  ['exertional|on exertion|pag naglalakad|kapag napapagod', ['cp_exertional']],
+  ['palawan|malaria', ['travel_mal']],
+  ['tb contact|may tb sa bahay|kasama sa bahay.{0,10}tb|household tb', ['tb_contact']],
+  ['street food|kumain sa labas|unsafe water|deep well|poso', ['unsafe_food']],
+  ['may dengue sa bahay|kapitbahay.{0,15}dengue|dengue (cases|outbreak)', ['dengue_area']],
+  ['natusok ng pako|kalawang|rusty nail|puncture wound', ['dirty_wound']],
+  ['hindi nag-?insulin|missed insulin|ran out of insulin|stopped (insulin|meds)', ['missed_insulin']],
+  // PMH
+  ['high blood|altapresyon|hypertensi\\w*|\\bhtn\\b', ['htn']],
+  ['diabet\\w*|\\bdm\\b|mataas ang asukal|may sugar', ['dm']],
+  ['naninigarilyo|nagyoyosi|yosi|smoker|smoking|cigarettes?', ['smoker']],
+  ['tb dati|nagka-?tb|treated for tb|prior tb|ptb', ['tb_hx']],
+  ['nakaratay|bedridden|immobili\\w*|recent surgery|post-?op|long (flight|bus trip)', ['immobil']],
+  ['birth control pills?|contraceptive pills?|contraceptives?|\\bocp\\b|estrogen', ['m_estrogen']],
+  ['kanser|cancer|malignan\\w*|chemo\\w*', ['malignancy']],
+  ['bato sa apdo|gallstones?', ['gallstones']],
+  ['bato sa bato|kidney stones?|nephrolithiasis', ['stones']],
+  ['dialysis|ckd|kidney disease', ['ckd']],
+];
+const NEG_CUES = /(\b(no|not|denies|denied|without|negative for|walang|wala|hindi|di|never|absent)\b)[^.;,]{0,25}$/;

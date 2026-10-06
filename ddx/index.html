@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'none'; form-action 'none'; base-uri 'none'">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#0d0f12">
+<link rel="icon" href="data:,">
+<title>DDx Assist – ED differential diagnosis support (offline)</title>
+<meta name="description" content="Offline, rule-based emergency department differential diagnosis, diagnostics and treatment support. Tintinalli 9e section-mapped, Philippine CPG-first. Decision support only – not a diagnosis.">
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body class="dark">
+<div id="app">
+  <header class="top">
+    <div><p class="sub" id="tkBack" style="margin:0 0 .2rem"><a href="../" style="color:var(--accent);font-weight:600">← EM Toolkit</a></p><script>try{if(window.self!==window.top||!/\/ddx\/[^\/]*$/.test(location.pathname))document.getElementById('tkBack').hidden=true}catch(e){}</script><h1>🩺 DDx Assist</h1><p class="sub">Offline rule-based ED differential · Tintinalli 9e-mapped · PH CPG-first</p></div>
+    <button id="theme" title="Toggle dark mode">☀️ Light</button>
+  </header>
+  <div class="disc" role="note" id="disclaimer"><b>⚠ Decision support only – NOT a diagnosis.</b> Output is a transparent, rule-based list of possibilities to consider. Your clinical judgment overrides it. Every dose is marked <span class="vtag">⚠ VERIFY</span> – check against current references and local protocols. Runs entirely on this device: no network, no storage of patient data.</div>
+  <div class="toolbar">
+    <select id="example" aria-label="Load example case"><option value="">📋 Load example case…</option></select>
+    <button id="clear" title="Clear all inputs">Clear</button>
+    <button id="jump" title="Jump to results">Results ↓</button>
+  </div>
+  <div class="cols">
+    <main id="form"></main>
+    <aside id="results" aria-live="polite"></aside>
+  </div>
+  <footer>
+    DDx Assist v1.0 · knowledge base: <span id="kbcount"></span> conditions organised by Tintinalli’s Emergency Medicine 9e <i>section/topic map only</i> (no book text reproduced). Diagnostics/treatment prefer Philippine CPGs where they exist; otherwise international guidelines (labelled “intl”). Weights are expert-estimated, not validated. Not a medical device. Companion to the <a href="https://carqisan-prog.github.io/em-toolkit/" rel="noopener noreferrer" target="_blank" style="color:var(--accent)">EM Toolkit</a>.
+  </footer>
+</div>
+<pre id="printnote"></pre>
+<div class="toast" id="toast"></div>
+<script src="js/findings.js"></script>
+<script src="js/kb.js"></script>
+<script src="js/engine.js"></script>
+<script src="js/cases.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

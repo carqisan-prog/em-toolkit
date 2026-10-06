@@ -89,9 +89,20 @@
   .ecgframe{display:block;width:100%;height:calc(100vh - 12rem);height:calc(100dvh - 12rem);min-height:480px;border:1px solid var(--border);border-radius:10px;background:var(--bg)}
   .ecglink{margin:.1rem 0 .4rem}
   .stools{border-bottom:1px solid var(--border);padding-bottom:.2rem;margin-bottom:.2rem}
+  /* DDx Assist panel (tool › DDx Assist): iframe of ddx/ that fills the content area, same layout as the ECG reader */
+  body.ddxwide #main{max-width:none}
+  .ddxtab .ddxcard{padding:.6rem .7rem .7rem}
+  .ddxprint{display:none}
+  .ddxframe{display:block;width:100%;height:calc(100vh - 12rem);height:calc(100dvh - 12rem);min-height:480px;border:1px solid var(--border);border-radius:10px;background:var(--bg)}
+  #ddxBack{position:fixed;left:50%;transform:translateX(-50%);bottom:max(.8rem,env(safe-area-inset-bottom));z-index:40;display:flex;align-items:center;gap:.2rem;padding:0;border:1px solid var(--accent);border-radius:999px;background:var(--card);box-shadow:0 3px 14px rgba(0,0,0,.35);max-width:calc(100vw - 1.5rem)}
+  #ddxBack[hidden]{display:none}
+  #ddxBack button{border:none;background:transparent;color:var(--accent);font-weight:700;font-size:.9rem;padding:.5rem .4rem .5rem .9rem;min-height:40px;white-space:nowrap}
+  #ddxBack button.x{padding:.5rem .8rem .5rem .3rem;color:var(--muted);font-weight:400}
   @media(max-width:600px){
     .ecgtab .ecgcard{padding:.55rem 0 0;background:transparent}
     .ecgbar{padding:0 2.2rem 0 .1rem}
     .ecgnote{padding:0 .1rem}
     .ecgframe{border-left:none;border-right:none;border-radius:0}
+    .ddxtab .ddxcard{padding:.55rem 0 0;background:transparent}
+    .ddxframe{border-left:none;border-right:none;border-radius:0}
   }

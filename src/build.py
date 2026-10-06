@@ -60,7 +60,7 @@ assert '@@' not in tox+endo
 anaph='<!-- ============ S3 RESUSCITATION: ANAPHYLAXIS ============ -->\n<section id="tab-anaph" hidden>\n'+C['anaph']+'</section>\n'
 pedsec='<!-- ============ S12 PEDIATRICS (v1 cards) ============ -->\n<section id="tab-peds" hidden>\n'+C['apls']+C['vitals']+C['maint']+'  <div class="note" style="margin:.5rem 0">Pediatric doses appear throughout the app in Pediatric mode (capped at the adult dose). Full Pediatrics section coming soon.</div>\n</section>\n'
 stub='<section id="tab-stub" hidden><div id="o-stub"></div></section>\n'
-newsecs='\n'.join([anaph, rd(os.path.join(N,'cardio.html')), rd(os.path.join(N,'ob.html')), pedsec, tox, rd(os.path.join(N,'env.html')), endo, stub])
+newsecs='\n'.join([anaph, rd(os.path.join(N,'cardio.html')), rd(os.path.join(N,'ob.html')), pedsec, tox, rd(os.path.join(N,'env.html')), endo, rd(os.path.join(N,'ddx.html')), stub])
 rep('<details class="card" id="review">', newsecs+'\n<details class="card" id="review">')
 
 # ---------- footer ----------
@@ -99,7 +99,7 @@ ad=re.sub(r'(?<!\$\{vtag\(\'en-dka-adult\'\)\})</li>', "${vtag('en-dka-adult')}<
 pe=re.sub(r'</li>', "${vtag('dka-peds')}</li>", pe).replace("enter weight${vtag('dka-peds')}</li>'}", "enter weight'+vtag('dka-peds')+'</li>'}")
 s=s[:i]+blk[:a]+ad+pe+s[j:]
 # TABS / setTab
-ALLP=[p for x in S for p,_ in x['panels']]+['stub']
+ALLP=[p for x in S for p,_ in x['panels']]+['ddx','stub']   # 'ddx' = DDx Assist tool panel (not tied to one section)
 rep("const TABS=['resus','airway','neuro','sepsis','tox','trauma','renal','pulm','more'];", "const TABS="+json.dumps(ALLP)+";")
 i=s.index('function setTab(t){'); j=s.index("document.querySelectorAll('#tabs button').forEach(b=>b.addEventListener('click',()=>setTab(b.dataset.t)));\n")
 j+=len("document.querySelectorAll('#tabs button').forEach(b=>b.addEventListener('click',()=>setTab(b.dataset.t)));\n")
@@ -121,7 +121,7 @@ rep("  'pfPao2','pfFio2','lpP','lsP','lpL','lsL','lUln','roxS','roxF','roxR'];",
     "  'hgNa','hgCl','hgHco3','hgGlu','hgGluU','hgBun','hgPh','hgBhb','hgK','bwT','bwC','bwG','bwH','bwF','bwA','bwP',\n"
     "  'stOnset','stFmc','stPci','heartH','heartE','heartR','heartT','adDd','ccTemp'].concat(NEWFIELDS);")
 rep("applyMode(); renderReview();","initNew(); applyMode(); renderReview();")
-rep("setTab(tab); renderAll(); renderFavs(); tickCode();","setTab(tab); renderAll(); renderFavs(); tickCode(); startupPrintParam();")
+rep("setTab(tab); renderAll(); renderFavs(); tickCode();","setTab(tab); renderAll(); renderFavs(); tickCode(); startupPrintParam(); startupDeepLink();")
 open(os.path.join(ROOT,'index.html'),'w',encoding='utf-8').write(s)
 
 # ---------- outline.md ----------
@@ -132,6 +132,7 @@ L=['# EM Toolkit – outline mapped to Tintinalli’s Emergency Medicine, 9th ed
  'Topic map only. The 26 section numbers and names were checked against the publisher’s table of contents (McGraw Hill, ISBN 9781260019933). Topic names are short paraphrases at topic-name level; no chapter numbers, chapter text, tables or figures from the book are reproduced. All app content is original and cites public guidelines.','',
  f'**{len(S)} sections · {T} topics** — status: '+', '.join(f"{v} {sum(1 for x in S if x['status']==k)}" for k,v in st.items()),'',
  'Topic coverage: '+' · '.join(f"{mark[k]} {cnt.get(k,0)}" for k in ['v1','new','merged','v1+new','v1+merged',''])+'','',
+ '**Embedded tools** (drawer/sidebar › 🛠, searchable): 📈 ECG reader (`ecg/`, also panel `ecg` under S7) · 🩺 DDx Assist (`ddx/`, panel `ddx`; rule-based differential diagnosis support, not tied to one section). Cards can be deep-linked as `index.html#o-<cardId>`.','',
  '**Legend:** ✅ v1 = card already on the existing site, ported · 🆕 new = built in this slice · 🔀 merged = from the Renal/Pulmonary worker (emt-renal, branch add-renal-section, read-only) · ⬜ = not built (stub with planned topics) · (app) = app addition, not a separate 9e chapter.','']
 for x in S:
     L.append(f"## S{x['n']} · {x['icon']} {x['title']} — {st[x['status']]}")

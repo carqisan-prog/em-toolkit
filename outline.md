@@ -6,6 +6,8 @@ Topic map only. The 26 section numbers and names were checked against the publis
 
 Topic coverage: ✅ v1 28 · 🆕 new 192 · 🔀 merged 14 · ✅🆕 v1+new 23 · ✅🔀 v1+merged 2 · ⬜ 55
 
+**Embedded tools** (drawer/sidebar › 🛠, searchable): 📈 ECG reader (`ecg/`, also panel `ecg` under S7) · 🩺 DDx Assist (`ddx/`, panel `ddx`; rule-based differential diagnosis support, not tied to one section). Cards can be deep-linked as `index.html#o-<cardId>`.
+
 **Legend:** ✅ v1 = card already on the existing site, ported · 🆕 new = built in this slice · 🔀 merged = from the Renal/Pulmonary worker (emt-renal, branch add-renal-section, read-only) · ⬜ = not built (stub with planned topics) · (app) = app addition, not a separate 9e chapter.
 
 ## S1 · 🚑 Prehospital Care — 🆕 Built

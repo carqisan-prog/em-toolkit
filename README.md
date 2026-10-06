@@ -6,6 +6,7 @@ A single-file, phone-first emergency medicine reference with 26 sections organiz
 - Printable reference: `full_toolkit.pdf`
 - Phone quick cards: `cards/`
 - ECG reader: `ecg/` (offline automated draft ECG read; also embedded in the app under S7 Cardiovascular › ECG reader)
+- DDx Assist: `ddx/` (offline rule-based ED differential diagnosis support – decision support only, not a diagnosis; also embedded in the app as ☰ › 🛠 🩺 DDx Assist). Toolkit cards can be deep-linked as `index.html#o-<cardId>` (e.g. `index.html#o-dengue`); `index.html?q=<term>` pre-fills the search.
 - Section and topic map: `outline.md`
 
 **Reference aid only. Not a medical device.** Every dose is marked ⚠ VERIFY and listed under "Doses pending owner review" in the app. Check each one against local protocols, the actual product concentration, and the patient before clinical use. Clinical judgment always overrides.

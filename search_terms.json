@@ -114,5 +114,8 @@
  "transcutaneous pacing": "pacing",
  "termination of resuscitation": "resethics",
  "ECG reader": "ecgr",
- "EKG": "ecgr"
+ "EKG": "ecgr",
+ "DDx": "ddxa",
+ "differential": "ddxa",
+ "diagnosis": "ddxa"
 }

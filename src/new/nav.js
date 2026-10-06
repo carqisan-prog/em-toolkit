@@ -6,6 +6,10 @@
 const SECTIONS = /*@@OUTLINE_JSON@@*/[];
 const PANEL_SEC = {}; SECTIONS.forEach(s=>s.panels.forEach(([p])=>PANEL_SEC[p]=s.id));
 const SEC = id => SECTIONS.find(s=>s.id===id);
+// Embedded tools that are not tied to one Tintinalli section (shown at the top of the drawer/sidebar).
+// The ECG reader also belongs to S7 (panel 'ecg'); DDx Assist is cross-sectional, so it gets a pseudo-section.
+const TOOL_PANELS = {ddx:{id:'tools', n:'', title:'Tools · DDx Assist', icon:'🩺', status:'built', panels:[['ddx','DDx Assist']], topics:[], tool:true}};
+const PSEC = t => TOOL_PANELS[t] || SEC(PANEL_SEC[t]);
 const PANEL_RE = {anaph:/Anaph/, resus:/Resus|Crash/, airway:/Airway/, cardio:/Cardio/, pulm:/Pulm/, renal:/Renal/, ob:/Obstet/, peds:/Pediatr/,
   sepsis:/Sepsis/, neuro:/Neuro/, tox:/Tox/, env:/Environ/, endo:/Endocr/, trauma:/Trauma/};
 const SAMPLE_PANELS = ['cardio','ob','tox','env','endo'];
@@ -43,7 +47,7 @@ Object.assign(REVIEW, {
 ['adeno','amio','lido','mag','bradyInf'].forEach(k=>{ if(D[k] && !D[k].flag) D[k].flag='cv-acls-drugs'; });
 
 // ======================= NAVIGATION =======================
-function curSecId(){ return tab==='stub' ? stubSec : PANEL_SEC[tab]; }
+function curSecId(){ return tab==='stub' ? stubSec : TOOL_PANELS[tab] ? null : PANEL_SEC[tab]; }
 function navList(filter){
   const f=(filter||'').trim().toLowerCase(), cs=curSecId();
   const h = SECTIONS.filter(s=>!f || (s.title+' '+s.topics.map(t=>t[0]).join(' ')).toLowerCase().includes(f)).map(s=>{
@@ -51,14 +55,19 @@ function navList(filter){
     let x=`<button class="sitem${on?' on':''}" data-nsec="${s.id}"${on?' aria-current="page"':''}><span class="snum">S${s.n}</span><span class="sname">${s.icon} ${esc(s.title)}</span>${badge(s.status)}</button>`;
     if(s.panels.length>1 && on) x+=`<div class="ppanel">${s.panels.map(([p,l])=>`<button data-npanel="${p}" class="${tab===p?'on':''}">${esc(l)}</button>`).join('')}</div>`;
     return x; }).join('');
-  const tool = !f || 'ecg reader ekg electrocardiogram rhythm strip tracing tools'.includes(f) || f.split(/\s+/).every(w=>'ecg reader ekg electrocardiogram rhythm strip tracing tools'.includes(w));
-  const tl = tool ? `<div class="stools"><button class="sitem${tab==='ecg'?' on':''}" data-npanel="ecg"${tab==='ecg'?' aria-current="page"':''}><span class="snum">🛠</span><span class="sname">📈 ECG reader</span><span class="sbadge built">Tool</span></button></div>` : '';
+  const TOOLS = [['ecg','📈 ECG reader','ecg reader ekg electrocardiogram rhythm strip tracing tools'],
+                 ['ddx','🩺 DDx Assist','ddx assist differential diagnosis undifferentiated must not miss tools']];
+  const tm = kw => !f || kw.includes(f) || f.split(/\s+/).every(w=>kw.includes(w));
+  const tb = TOOLS.filter(([,,kw])=>tm(kw)).map(([p,l])=>`<button class="sitem${tab===p?' on':''}" data-npanel="${p}"${tab===p?' aria-current="page"':''}><span class="snum">🛠</span><span class="sname">${l}</span><span class="sbadge built">Tool</span></button>`).join('');
+  const tl = tb ? `<div class="stools">${tb}</div>` : '';
   return (tl + h) || '<div class="note" style="padding:.4rem">No section matches.</div>';
 }
 const LEGEND = () => `<div class="legend">${badge('built')} built in this slice<br>${badge('merged')} merged from the Renal/Pulmonary build<br>${badge('v1')} cards from the original site<br>${badge('soon')} coming soon (planned topic list)<br>Map: 26 major sections of Tintinalli 9e – topic names only.</div>`;
 function refreshNav(){
   $('slist').innerHTML = navList($('sfilter').value);
   $('dlist').innerHTML = navList($('dfilter').value);
+  const tp=TOOL_PANELS[tab];
+  if(tp){ $('curSec').textContent = `${tp.icon} ${tp.panels[0][1]}`; $('subnav').innerHTML=''; if(!PRINTMODE) document.title = `${tp.panels[0][1]} – EM Toolkit (Tintinalli-mapped)`; return; }
   const s=SEC(curSecId());
   if(s){ $('curSec').textContent = `S${s.n} · ${s.title}`;
     $('subnav').innerHTML = s.panels.length>1 ? s.panels.map(([p,l])=>`<button data-npanel="${p}" class="${tab===p?'on':''}" aria-pressed="${tab===p}">${esc(l)}</button>`).join('') : '';
@@ -68,10 +77,11 @@ function navSetTab(t, sid){
   if(t==='stub'){ stubSec = sid || stubSec || 'prehosp'; store.set(K('stubSec'), stubSec); }
   if(!TABS.includes(t)) t='resus';
   tab=t; store.set(K('tab'),t);
-  if(t!=='stub'){ secPanel[PANEL_SEC[t]]=t; store.set(K('secPanel'),secPanel); }
+  if(t!=='stub' && PANEL_SEC[t]){ secPanel[PANEL_SEC[t]]=t; store.set(K('secPanel'),secPanel); }
   TABS.forEach(x=>{ const el=$('tab-'+x); if(el) el.hidden = x!==t; });
   if(t==='stub') renderStub();
   ecgShow(t==='ecg' && !PRINTMODE);
+  ddxShow(t==='ddx' && !PRINTMODE);
   refreshNav();
 }
 function navSec(id){
@@ -113,7 +123,7 @@ function renderPrintRev(){
 let SR=[], srAct=-1;
 function searchIndex(){
   const items=[];
-  Object.entries(CARDS).forEach(([id,c])=>{ const s=SEC(PANEL_SEC[c.tab]); if(!s) return;
+  Object.entries(CARDS).forEach(([id,c])=>{ const s=PSEC(c.tab); if(!s) return;
     items.push({kind:'card', id, title:c.title.replace(/&amp;/g,'&'), kw:c.el.dataset.kw||'', text:c.el.textContent, sec:s}); });
   SECTIONS.forEach(s=>{ items.push({kind:'sec', id:s.id, title:`S${s.n} ${s.title}`, kw:'section', text:s.topics.map(t=>t[0]).join(' '), sec:s});
     s.topics.forEach(([t,c])=>{ if(!c) items.push({kind:'topic', id:s.id, title:t, kw:'', text:'', sec:s}); }); });
@@ -139,7 +149,7 @@ function renderSR(){
   if(q.length<2){ box.hidden=true; $('search').setAttribute('aria-expanded','false'); return; }
   SR=doSearch(q); if(srAct>=SR.length) srAct=SR.length?0:-1; const toks=q.toLowerCase().split(/\s+/);
   box.innerHTML = SR.length ? SR.map((r,i)=>{
-    const where = r.kind==='topic' ? `S${r.sec.n} ${r.sec.title} · coming soon` : r.kind==='sec' ? `Section · ${r.sec.status==='soon'?'coming soon':BADGE[r.sec.status][1]}` : `S${r.sec.n} ${r.sec.title}`;
+    const where = r.sec.tool ? 'Tool · opens in the toolkit (or full screen)' : r.kind==='topic' ? `S${r.sec.n} ${r.sec.title} · coming soon` : r.kind==='sec' ? `Section · ${r.sec.status==='soon'?'coming soon':BADGE[r.sec.status][1]}` : `S${r.sec.n} ${r.sec.title}`;
     const sn = r.hitText && r.kind==='card' ? ` · ${hl(snippet(r.text,r.hitText),toks)}` : '';
     return `<button class="sr${i===srAct?' act':''}" role="option" id="sr${i}" aria-selected="${i===srAct}" data-sri="${i}"><div>${r.kind==='topic'?'🚧 ':r.kind==='sec'?'📂 ':''}${hl(r.title,toks)}</div><div class="note">${esc(where)}${sn}</div></button>`; }).join('')
     : `<div class="none">No match for “${esc(q)}”</div>`;
@@ -217,7 +227,7 @@ document.addEventListener('change',e=>{ const c=e.target.closest('[data-nc]'); i
 
 // ======================= PRINT =======================
 function fillPrintHead(list){
-  const names = list.map(p=>{ const s=SEC(PANEL_SEC[p]); return s?`S${s.n} ${s.title}`:p; }).filter((n,i,a)=>a.indexOf(n)===i);
+  const names = list.map(p=>{ const s=PSEC(p); return s?(s.tool?s.title:`S${s.n} ${s.title}`):p; }).filter((n,i,a)=>a.indexOf(n)===i);
   $('printhead').innerHTML = `<h1>EM Toolkit (Tintinalli-mapped) – ${list.length>=TABS.length-1?'full toolkit':list.join()===SAMPLE_PANELS.join()?'sample sections':list.length>1?'selected sections':esc(names[0])}</h1>
    <div class="note">${esc(names.join(' · '))} · printed ${new Date().toLocaleString('en-GB')} · ${ok(W())?`doses computed for ${peds()?'PEDIATRIC':'ADULT'} ${fmt(W())} kg`:'generic per-kg doses (no patient weight entered)'}.
    Reference aid only – verify clinically. Every ⚠ VERIFY item is pending owner review (listed at the end of each section). Original summaries citing public guidelines (AHA, ERC, ESC, ACOG, WHO, ADA/JBDS, ATA, Endocrine Society, WMS, ILCOR, AACT/EAPCCT, DOH/RITM/NPMCC); Tintinalli 9e used only as a topic map.</div>`;
@@ -258,8 +268,14 @@ function initNew(){
   $('printSample').addEventListener('click',()=>printPanels(SAMPLE_PANELS));
   if($('printAll')) $('printAll').addEventListener('click',()=>printPanels(TABS.filter(t=>t!=='stub')));
   addSecHeads(); initSearch();
-  $('theme').addEventListener('click',()=>setTimeout(ecgSyncTheme,0));
+  $('theme').addEventListener('click',()=>setTimeout(()=>{ ecgSyncTheme(); ddxSyncTheme(); },0));
   if($('ecgFrame')) $('ecgFrame').addEventListener('load',ecgSyncTheme);
+  if($('ddxFrame')) $('ddxFrame').addEventListener('load',ddxSyncTheme);
+  window.addEventListener('storage',e=>{ if(e.key===K('dark') && e.newValue!=null){ const d=JSON.parse(e.newValue); if(d!==document.body.classList.contains('dark')){ applyTheme(d); ecgSyncTheme(); } } });  // theme toggled inside DDx (shared em_dark key)
+  const bk=document.createElement('div'); bk.id='ddxBack'; bk.hidden=true; bk.setAttribute('role','navigation'); bk.setAttribute('aria-label','Return to DDx Assist');
+  bk.innerHTML='<button type="button" data-npanel="ddx">← Back to 🩺 DDx Assist</button><button type="button" class="x" aria-label="Dismiss">✕</button>';
+  document.body.append(bk); bk.querySelector('.x').addEventListener('click',()=>{ bk.hidden=true; });
+  window.addEventListener('hashchange',()=>deepLink(false));
   initTox(); initOB(); initEndo(); initCardio(); initEnv();
 }
 function renderNew(w){
@@ -294,6 +310,58 @@ function ecgSyncTheme(){
     const d=f.contentDocument, b=d&&d.getElementById('themeBtn');
     if(b && d.body.classList.contains('dark')!==dark) b.click(); }catch(e){}
 }
+// ======================= DDX ASSIST PANEL (ddx/ in an iframe, loaded on first open) =======================
+function ddxShow(on){
+  document.body.classList.toggle('ddxwide', on);
+  if(on && $('ddxBack')) $('ddxBack').hidden=true;
+  const f=$('ddxFrame'); if(!on || !f) return;
+  ddxSize();
+  if(document.readyState!=='loading') setTimeout(ddxScroll,0);
+  if(!f.getAttribute('src')) f.src=f.dataset.src; else ddxSyncTheme();
+}
+function ddxSize(){
+  const f=$('ddxFrame'), st=document.querySelector('.sticky'); if(!f || tab!=='ddx') return;
+  f.style.height = Math.max(420, window.innerHeight - (st?st.offsetHeight:0) - 10) + 'px';
+}
+function ddxScroll(){
+  const c=document.querySelector('.ddxcard'), st=document.querySelector('.sticky'); if(!c || tab!=='ddx') return;
+  window.scrollTo({top: Math.max(0, c.getBoundingClientRect().top + window.scrollY - (st?st.offsetHeight:0) - 6)});
+}
+window.addEventListener('resize',()=>ddxSize());
+function ddxSyncTheme(){
+  const f=$('ddxFrame'); if(!f || !f.getAttribute('src')) return;
+  const dark=document.body.classList.contains('dark');
+  try{ const d=f.contentDocument, b=d&&d.getElementById('theme'); if(b && d.body.classList.contains('dark')!==dark) b.click(); }catch(e){}
+}
+
+// ======================= DEEP LINKS: index.html#o-<cardId> (from DDx Assist) and ?q=<search> =======================
+function cardFor(id){
+  if(CARDS[id]) return id;
+  const el=document.getElementById('o-'+id), c=el&&el.closest('[data-card]');   // output div id inside a card
+  return c && CARDS[c.dataset.card] ? c.dataset.card : null;
+}
+function scrollToCard(id){   // like goCard(), but lands the card just below the sticky bar
+  const c=CARDS[id]; if(!c) return false;
+  closeDrawer(); setTab(c.tab);
+  const go=()=>{ const st=document.querySelector('.sticky'); window.scrollTo({top: Math.max(0, c.el.getBoundingClientRect().top + window.scrollY - (st?st.offsetHeight:0) - 8)}); };
+  go(); requestAnimationFrame(go); setTimeout(go,300);
+  c.el.classList.add('hl'); setTimeout(()=>c.el.classList.remove('hl'),2200);
+  return true;
+}
+function deepLink(startup){
+  let id=null; try{ const m=decodeURIComponent(location.hash||'').match(/^#o-([\w-]+)$/); if(m) id=cardFor(m[1]); }catch(e){}
+  if(id){ scrollToCard(id); return true; }
+  if(startup){ const q=location.search.match(/[?&]q=([^&#]*)/);
+    if(q){ let t=''; try{ t=decodeURIComponent(q[1].replace(/\+/g,' ')).trim(); }catch(e){}
+      if(t){ $('search').value=t; srAct=0; renderSR(); $('search').focus({preventScroll:true}); return true; } } }
+  return false;
+}
+function startupDeepLink(){ if(!/[?&]print=/.test(location.search)) deepLink(true); }
+// API for same-origin embedded tools (ddx/ iframe): open a toolkit card in this page.
+window.EMTK = { openCard(id, from){ const c=cardFor(String(id||'')); if(!c) return false;
+  scrollToCard(c);
+  if(from==='ddx' && $('ddxBack')) $('ddxBack').hidden=false;   // floating '← Back to DDx Assist' (DDx state is kept in the hidden iframe)
+  return true; } };
 function startupPrintParam(){
   const m=location.search.match(/[?&]print=([a-z,]+)/); if(!m) return;
   const list = m[1]==='sample' ? SAMPLE_PANELS : m[1]==='all' ? TABS.filter(t=>t!=='stub') : m[1].split(',').filter(p=>TABS.includes(p));
