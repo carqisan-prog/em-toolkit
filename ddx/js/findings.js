@@ -80,6 +80,34 @@ const FGROUPS = {
     ['comp_pain','Pain out of proportion / pain on passive stretch'],['comp_tense','Tense, swollen compartment'],['crush_long','Limb crushed / entrapped ≥ 1 h'],
     ['dark_urine','Dark / cola-coloured urine'],['contaminated','Heavily contaminated wound (soil, farm, floodwater)']]},
   'tr_preg': {t:'Pregnancy (if pregnant)', sec:'tr', f:[['uterine_tender','Uterine tenderness / contractions / rigid uterus'],['fhr_abn','Abnormal / absent fetal heart rate'],['rom','Leaking amniotic fluid']]},
+  // ---- Pediatric mode (IMCI general danger signs · pediatric history / exam · Kawasaki criteria) ----
+  'pd_ds':   {t:'IMCI general danger signs', sec:'pd', f:[
+    ['ds_drink','Not able to drink or breastfeed'],['ds_vomit','Vomits everything'],['ds_conv','Convulsions during this illness'],
+    ['ds_leth','Lethargic or unconscious'],['ds_convnow','Convulsing now']]},
+  'pd_hx':   {t:'Pediatric history', sec:'pd', f:[
+    ['poor_feed','Poor feeding / ayaw dumede o kumain'],['irritable','Irritable / excessive crying'],['inconsolable','Inconsolable'],['coryza','Runny nose / sipon'],
+    ['barking','Barking ("seal") cough / hoarse cry'],['choking','Witnessed choking / sudden cough while eating or playing'],['drooling','Drooling / cannot swallow saliva'],
+    ['ear_pain','Ear pain / ear tugging / ear discharge'],['apnea','Apnea / pauses in breathing / BRUE'],['cyanosis','Cyanosis / blue spells'],['sweat_feed','Sweating or breathless with feeds / poor weight gain'],
+    ['bilious','Bilious (green) vomiting'],['projectile','Projectile non-bilious vomiting after feeds'],['episodic_pain','Episodic inconsolable crying, legs drawn up'],
+    ['currant','Currant-jelly / bloody mucoid stool'],['delayed_meconium','Meconium > 48 h / constipation since birth'],['jaundice_24h','Jaundice in the first 24 h of life'],
+    ['pale_stool','Pale stools / dark urine (cholestasis)'],['limp','Limp'],['nwb','Refuses to bear weight'],['hop_pain','Pain on coughing / hopping / percussion'],
+    ['enuresis','New bed-wetting'],['oral_ulcers','Mouth sores / ulcers (singaw)'],['ingestion','Accidental ingestion (nakalunok / nakainom)'],
+    ['ingest_iron','Iron tablets / ferrous sulfate ingestion'],['ingest_kero','Kerosene / gasoline / thinner (hydrocarbon) ingestion'],
+    ['sz_long','Seizure ≥ 5 min or repeated without recovery'],['sz_complex','Focal seizure, > 15 min, or > 1 in 24 h'],['sz_brief','Generalised seizure < 15 min, back to baseline'],
+    ['measles_contact','Measles case / outbreak contact'],['covid_exp','COVID-19 illness / exposure 2–6 weeks ago'],['abuse_concern','History inconsistent with injury / development, or delay in care'],['preterm','Born preterm (< 37 wk)'],
+    ['imm_complete','Immunizations complete for age (per card)'],['unimmunized','Incomplete / no immunizations']]},
+  'pd_pe':   {t:'Pediatric exam', sec:'pd', f:[
+    ['chest_indraw','Chest indrawing / retractions'],['grunting','Grunting'],['nasal_flare','Nasal flaring / head bobbing'],['stridor_rest','Stridor at rest (calm)'],
+    ['air_entry_dec','Decreased air entry'],['tripod','Tripod / sniffing position, toxic'],['unilat_wheeze','Unilateral wheeze / ↓ breath sounds on one side'],
+    ['sunken_eyes','Sunken eyes'],['pinch_slow','Skin pinch goes back slowly'],['pinch_vslow','Skin pinch goes back very slowly (≥ 2 s)'],
+    ['drinks_eager','Drinks eagerly, thirsty'],['drinks_poor','Drinks poorly'],['fontanelle_sunken','Sunken fontanelle'],['fontanelle_bulge','Bulging fontanelle'],
+    ['crt_prolonged','Capillary refill > 2 s'],['mottled','Mottled / grey skin'],['sausage_mass','Sausage-shaped abdominal mass'],['olive','Palpable "olive" / visible peristalsis'],
+    ['tm_bulge','Bulging / red, immobile ear drum'],['hand_vesicles','Vesicles on hands / feet / buttocks'],['koplik','Koplik spots'],['conj_red','Red eyes / conjunctivitis'],
+    ['femoral_weak','Weak femoral pulses / pre- vs post-ductal SpO₂ gap > 3 %'],['hip_rom','Hip held flexed, painful / limited range'],['scrotal_swell','Scrotal swelling / redness'],['hard_testis','Hard / tender testis'],
+    ['bruise_pattern','Bruise in non-mobile infant, or on torso / ear / neck (TEN-4-FACESp)'],['wasting','Severe wasting / bilateral pitting edema of feet']]},
+  'pd_kd':   {t:'Kawasaki criteria (AHA)', sec:'pd', f:[
+    ['kd_conj','Bilateral non-exudative conjunctival injection'],['kd_oral','Red cracked lips / strawberry tongue / red mouth'],['kd_rash','Polymorphous rash'],
+    ['kd_extrem','Red / swollen hands & feet or periungual peeling'],['kd_node','Cervical node ≥ 1.5 cm (usually one side)']]},
   // ---- PMH / risk factors ----
   'pmh':     {t:'PMH / risk factors', sec:'pmh', f:[
     ['htn','Hypertension'],['dm','Diabetes'],['dm1','Type 1 DM'],['smoker','Smoker'],['dyslipid','Dyslipidemia'],['obesity','Obesity'],
@@ -147,6 +175,16 @@ Object.assign(FLABEL, {
   air_threat:'Airway threatened', air_obst:'Airway obstructed', dec_bs_bil:'↓ Breath sounds both sides', pupil_uni:'Unilateral dilated / unreactive pupil', pupil_bil:'Both pupils fixed & dilated',
   gcs_9_12:'GCS 9–12 (moderate TBI)', gcs_13_15:'GCS 13–15', gcs_lt13:'GCS < 13', t_lt35:'T < 35 °C (hypothermia)', sbp_lt110:'SBP < 110', hr_ge120:'HR ≥ 120',
   inj_le3h:'Injury ≤ 3 h ago', inj_gt3h:'Injury > 3 h ago', tbsa_ge10:'Burn ≥ 10 % TBSA', tbsa_ge20:'Burn ≥ 20 % TBSA', bd_ge6:'Base deficit ≥ 6', helmet:'Helmet worn'
+});
+
+// pediatric-derived (age-specific vital signs, PAT, intake, age bands)
+Object.assign(FLABEL, {
+  peds:'Pediatric patient (< 18 y)', age_le21d:'Age ≤ 21 days', age_le28d:'Age ≤ 28 days (neonate)', age_le60d:'Age ≤ 60 days', age_lt3mo:'Age < 3 months', age_lt6mo:'Age < 6 months', age_lt1y:'Age < 1 year',
+  age_lt2y:'Age < 2 years', age_lt5y:'Age < 5 years', age_6mo_5y:'Age 6 months – 5 years', age_3mo_3y:'Age 3 months – 3 years', age_2_12wk:'Age 2–12 weeks', age_ge5:'Age ≥ 5 years', age_ge10:'Age ≥ 10 years',
+  hr_hi_age:'Tachycardia for age', hr_vhi_age:'HR ≥ 220 (infant) / ≥ 180 (child)', hr_lo_age:'Bradycardia for age', rr_hi_age:'Tachypnea for age', fast_breath:'Fast breathing (WHO / PAPP-PIDSP cut-off for age)',
+  sbp_lo_age:'Hypotension for age (PALS)', pat_appear:'PAT: abnormal appearance', pat_wob:'PAT: increased work of breathing', pat_circ:'PAT: abnormal circulation to skin',
+  danger_sign:'IMCI general danger sign', fever_ge5d:'Fever ≥ 5 days', fever_ge7d:'Fever ≥ 7 days', fever_lt24h:'Fever < 24 h', t_ge385:'T ≥ 38.5 °C', anc_high:'ANC > 4 ×10⁹/L', anc_10:'ANC > 10 ×10⁹/L',
+  pct_high:'Procalcitonin > 0.5 ng/mL', crp_high:'CRP > 20 mg/L', crp_30:'CRP ≥ 30 mg/L (3 mg/dL)', esr_40:'ESR > 40 mm/h', ph_lt73:'pH < 7.3 or HCO₃ < 18', wbc_12:'WBC > 12k', swelling:'Swelling (namamaga)'
 });
 
 // ---------------- Free-text lexicon ----------------
@@ -292,6 +330,55 @@ const LEX = [
   ['clopidogrel|aspirin|antiplatelet', ['m_antiplt']],
   ['paos|namamaos|hoarse voice|voice change|singed|carbonaceous|uling sa ilong', ['voice_change']],
   ['hindi gumagalaw ang baby|walang heartbeat ang baby|fetal (distress|bradycardia)', ['fhr_abn']],
+  // pediatric (Taglish caregiver phrases)
+  ['kinukumbulsyon|kinumbulsyon|kinokombulsyon|nagkukumbulsyon|nagkombulsyon|kumbulsiyon|kombulsiyon|nangingisay|nanginig ang buong katawan|febrile seizure', ['seizure']],
+  ['ayaw dumede|ayaw nang dumede|ayaw dumedede|hindi dumedede|ayaw sumuso|mahina dumede|mahinang dumede|ayaw kumain|ayaw nang kumain|poor (feeding|suck)|feeding poorly|not feeding', ['poor_feed']],
+  ['hindi makadede|hindi na makadede|hindi makasuso|hindi na makainom|unable to (drink|breastfeed|feed)', ['ds_drink','poor_feed']],
+  ['isinusuka lahat|sinusuka lahat|lahat ng (kinakain|iniinom|dinede) (ay )?(sinusuka|isinusuka)|vomits everything', ['ds_vomit','vomiting']],
+  ['matamlay|lantang-?lanta|malata|walang sigla|lethargic|floppy|hard to wake|mahirap gisingin', ['lethargy']],
+  ['iyak nang iyak|umiiyak nang umiiyak|iritable|irritable|fussy|maligalig', ['irritable']],
+  ['hindi mapatahan|ayaw tumahan|inconsolable', ['inconsolable','irritable']],
+  ['sipon|sinisipon|tumutulo ang sipon|barado ang ilong|runny nose|coryza|rhinorrh\\w*', ['coryza']],
+  ['parang tahol|tumatahol|tahol ng aso|barking|barky|seal-?like|croupy', ['barking','cough']],
+  ['humuhuni|maingay ang paghinga|stridor', ['stridor']],
+  ['naglalaway|tumutulo ang laway|drooling', ['drooling']],
+  ['nabulunan|nabilaukan|nasamid|naka-?lunok ng (mani|barya|laruan|buto)|choking|choked', ['choking']],
+  ['sakit ng tainga|masakit ang tainga|masakit ang tenga|sakit ng tenga|hinihila ang tenga|hinihila ang tainga|nana sa tenga|ear ?ache|ear pain|otalgia|otorrh\\w*', ['ear_pain']],
+  ['humihinto ang paghinga|tumitigil ang paghinga|apnea|apnoea|brue', ['apnea']],
+  ['nangingitim|nangangasul|nagkukulay ube|kulay ube ang labi|cyanosis|cyanotic|bluish|blue lips', ['cyanosis']],
+  ['pinagpapawisan habang dumedede|hinihingal habang dumedede|sweating with feeds|breathless with feeds', ['sweat_feed']],
+  ['berde ang suka|kulay berde ang suka|green vomit\\w*|bilious', ['bilious','vomiting']],
+  ['pumupulandit|bumubulwak na suka|projectile', ['projectile','vomiting']],
+  ['iyak nang iyak tapos tumitigil|paputol-putol na iyak|nakabaluktot ang (paa|binti)|legs drawn up|episodic (crying|pain)|colicky pain', ['episodic_pain']],
+  ['parang jelly ang dumi|currant[- ]jelly|dugo at sipon sa dumi|may sipon at dugo ang dumi', ['currant','hematochezia']],
+  ['naninilaw (na )?(sa|noong) unang araw|jaundice (in the )?first 24', ['jaundice_24h','jaundice']],
+  ['maputla ang dumi|puti ang dumi|pale stools?|acholic', ['pale_stool']],
+  ['paika-?ika|pilay|limping|limp', ['limp']],
+  ['ayaw tumapak|ayaw tumayo|ayaw maglakad|hindi makalakad|refuses to (walk|bear weight)|non-?weight-?bearing', ['nwb']],
+  ['naiihi sa kama|bed-?wetting|enuresis', ['enuresis']],
+  ['singaw|sugat sa bibig|sugat-sugat sa bibig|mouth (sores|ulcers)|oral ulcers', ['oral_ulcers']],
+  ['butlig sa (kamay|palad|paa|talampakan)|paltos sa (kamay|paa)|hand,? foot,? (and )?mouth|hfmd', ['hand_vesicles','rash']],
+  ['tigdas|measles|rubeola', ['measles_contact','rash']],
+  ['nakalunok|nakainom ng|accidental ingestion|ingested', ['ingestion']],
+  ['gaas|kerosene|gasolina|gasoline|thinner|lamp oil|paint thinner|hydrocarbon', ['ingest_kero','ingestion']],
+  ['ferrous|iron (tablets?|pills?|supplements?)|pampadugo', ['ingest_iron','ingestion']],
+  ['lumulubog ang dibdib|hinihila ang dibdib|lubog ang dibdib|chest indrawing|retractions?|subcostal', ['chest_indraw']],
+  ['umuungol|grunting', ['grunting']],
+  ['lubog ang mata|malalim ang mata|sunken eyes', ['sunken_eyes']],
+  ['lubog ang bunbunan|sunken fontanel\\w*', ['fontanelle_sunken']],
+  ['nakaumbok ang bunbunan|umbok ang bunbunan|bulging fontanel\\w*', ['fontanelle_bulge']],
+  ['uhaw na uhaw ang bata|sabik uminom|drinks eagerly', ['drinks_eager']],
+  ['namumula ang mata|mapula ang mata|pula ang mata|red eyes|conjunctivitis', ['conj_red']],
+  ['namamaga ang (kamay|paa|palad|talampakan)|swollen (hands|feet)', ['kd_extrem','swelling']],
+  ['namamaga ang (leeg|kulani)|kulani sa leeg|bukol sa leeg|neck (swelling|lump)', ['cerv_nodes','swelling']],
+  ['namamaga ang bayag|swollen scrotum|scrotal swelling', ['scrotal_swell','testis_pain','swelling']],
+  ['namamaga ang (tuhod|balakang|kasukasuan|siko|bukung-?bukong)', ['hot_joint','swelling']],
+  ['namamaga|maga|swelling|swollen', ['swelling']],
+  ['mapula at bitak-?bitak ang labi|bitak ang labi|strawberry tongue|cracked lips', ['kd_oral']],
+  ['walang bakuna|kulang ang bakuna|hindi bakunado|hindi nabakunahan|unvaccinated|unimmuni[sz]ed|incomplete (immuni[sz]ations?|vaccinations?)|no vaccines?', ['unimmunized']],
+  ['kumpleto ang bakuna|kumpleto sa bakuna|complete (immuni[sz]ations?|vaccinations?|vaccines)|fully (immuni[sz]ed|vaccinated)|up to date (on|with) (vaccines|immuni[sz]ations)', ['imm_complete']],
+  ['pinalo|sinaktan ng (magulang|tatay|nanay|tito|tiyuhin|stepfather)|hindi tugma ang kwento|child abuse|pang-?aabuso|inconsistent (history|story)', ['abuse_concern']],
+  ['premature|preterm|kulang sa buwan', ['preterm']],
   // PMH
   ['high blood|altapresyon|hypertensi\\w*|\\bhtn\\b', ['htn']],
   ['diabet\\w*|\\bdm\\b|mataas ang asukal|may sugar', ['dm']],

@@ -8,7 +8,7 @@
 <meta name="theme-color" content="#0d0f12">
 <link rel="icon" href="data:,">
 <title>DDx Assist – ED differential diagnosis support (offline)</title>
-<meta name="description" content="Offline, rule-based emergency department differential diagnosis, diagnostics and treatment support, with an ATLS-based trauma mode. Tintinalli 9e section-mapped, Philippine CPG-first. Decision support only – not a diagnosis.">
+<meta name="description" content="Offline, rule-based emergency department differential diagnosis, diagnostics and treatment support, with an ATLS-based trauma mode and a pediatric mode (weight-based doses, IMCI). Tintinalli 9e section-mapped, Philippine CPG-first. Decision support only – not a diagnosis.">
 <link rel="stylesheet" href="css/app.css">
 </head>
 <body class="dark">
@@ -21,6 +21,7 @@
   <div class="toolbar">
     <select id="example" aria-label="Load example case"><option value="">📋 Load example case…</option></select>
     <button id="trMode" class="trm" type="button" aria-pressed="false" title="Trauma mode: ATLS primary survey first, trauma differential, trauma rules">🩻 Trauma</button>
+    <button id="pdMode" class="pdm" type="button" aria-pressed="false" title="Pediatric mode (auto-on for age < 18): age-specific vital signs, PAT, IMCI danger signs, pediatric conditions and weight-based doses">🧒 Peds</button>
     <button id="clear" title="Clear all inputs">Clear</button>
     <button id="jump" title="Jump to results">Results ↓</button>
   </div>
@@ -29,7 +30,7 @@
     <aside id="results" aria-live="polite"></aside>
   </div>
   <footer>
-    DDx Assist v1.1 (trauma mode) · knowledge base: <span id="kbcount"></span> conditions organised by Tintinalli’s Emergency Medicine 9e <i>section/topic map only</i> (no book text reproduced). Diagnostics/treatment prefer Philippine CPGs where they exist; otherwise international guidelines (labelled “intl”). Weights are expert-estimated, not validated. Not a medical device. Companion to the <a href="https://carqisan-prog.github.io/em-toolkit/" rel="noopener noreferrer" target="_blank" style="color:var(--accent)">EM Toolkit</a>.
+    DDx Assist v1.2 (trauma + pediatric modes) · knowledge base: <span id="kbcount"></span> conditions organised by Tintinalli’s Emergency Medicine 9e <i>section/topic map only</i> (no book text reproduced). Diagnostics/treatment prefer Philippine CPGs where they exist; otherwise international guidelines (labelled “intl”). Pediatric mode follows the Tintinalli 9e Pediatrics section topic map with DOH IMCI / PAPP-PIDSP / DOH dengue first; weight-based doses are capped at the adult maximum and must be verified. Weights are expert-estimated, not validated. Not a medical device. Companion to the <a href="https://carqisan-prog.github.io/em-toolkit/" rel="noopener noreferrer" target="_blank" style="color:var(--accent)">EM Toolkit</a>.
   </footer>
 </div>
 <pre id="printnote"></pre>

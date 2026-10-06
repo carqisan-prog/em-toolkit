@@ -14,6 +14,7 @@ let CH = {};           // chip states {id: 1 | -1}
 let SEX = '';
 let PLAN = null, planTouched = false, last = null;
 let TR = false, trManualOff = false;   // trauma mode (auto-on when an injury is recorded, unless switched off by the user)
+let PDM = false, pdManual = null;      // pediatric mode (auto-on for age < 18; pdManual = true/false once the user toggles it)
 
 // ---------- theme (same key as EM Toolkit: em_dark) ----------
 function getDark(){ try{ const v=localStorage.getItem('em_dark'); return v==null ? true : JSON.parse(v); }catch(e){ return true; } }
@@ -48,13 +49,45 @@ function traumaForm(){
   <div class="gl">Secondary survey (head-to-toe)</div>
   ${['tr_head','tr_neck','tr_chest','tr_abd','tr_spine','tr_ext','tr_preg'].map(g=>`<details class="sub" id="trs-${g}"${g==='tr_preg'?' hidden':''}><summary>${esc(FGROUPS[g].t)}<span class="cnt" id="cnt-${g}" hidden></span></summary>${chipsOnly(g, {tr_chest:['cxr_ptx','cxr_mediast'], tr_abd:['rebound','rigid','distended','hematuria'], tr_preg:['vag_bleed']}[g])}</details>`).join('')}`;
 }
+function pedsForm(){
+  const pat = [['','— not assessed'],['n','Normal'],['a','Abnormal']];
+  const gcsP = (n,lab) => [['','—'],...Array.from({length:n},(_,i)=>[String(n-i),(n-i)+' '+lab[n-i-1]])];
+  const E=['none','to pain','to sound','spontaneous'], V=['none','moans to pain / sounds','cries to pain / words','irritable cry / confused','coos, babbles / oriented'], M=['none','extension','abnormal flexion','withdraws to pain','withdraws to touch / localises','spontaneous / obeys'];
+  const w = (id,lab,opts) => selIn(id,lab,[['','— from chips'],...opts]);
+  return `<div class="note">Age-specific vital signs, Pediatric Assessment Triangle, IMCI danger signs and weight-based doses (capped at the adult dose – every dose <span class="vtag">⚠ VERIFY</span>). <span id="pdRange"></span></div>
+  <div class="grid3">${numIn('pdWt','Weight (kg)','weigh the child','0.1')}
+    ${selIn('imm','Immunization (EPI)',[['','—'],['complete','Complete for age'],['incomplete','Incomplete / delayed'],['none','None / no card']])}
+    ${selIn('feed','Feeding / intake',[['','—'],['normal','Normal'],['reduced','Reduced (< ½ usual)'],['poor','Poor'],['unable','Unable to drink / breastfeed']])}
+    ${selIn('uo','Urine output',[['','—'],['normal','Normal'],['reduced','Reduced / fewer wet diapers'],['none','None ≥ 6–8 h']])}
+    ${selIn('act','Activity / consolability',[['','—'],['normal','Normal / playful'],['irritable','Irritable, consolable'],['inconsolable','Inconsolable'],['lethargic','Lethargic / matamlay'],['unresponsive','Unresponsive']])}</div>
+  <div class="note" id="pdWtNote"></div>
+  <div class="gl">Pediatric Assessment Triangle (from the doorway)</div>
+  <div class="grid3">${selIn('patA','Appearance (TICLS)',pat)}${selIn('patB','Work of breathing',pat)}${selIn('patC','Circulation to skin',pat)}</div>
+  ${chipHTML('pd_ds')}${chipHTML('pd_hx')}${chipHTML('pd_pe')}${chipHTML('pd_kd')}
+  <details class="sub" id="pd-more"><summary>Pediatric labs · pediatric GCS · Westley croup items</summary>
+   <div class="grid3">${numIn('anc','ANC ×10⁹/L','','0.01')}${numIn('crp','CRP mg/L','','0.1')}${numIn('pct','Procalcitonin ng/mL','','0.01')}${numIn('esr','ESR mm/h','')}${numIn('ph','Venous pH','','0.01')}${numIn('hco3','HCO₃ mmol/L','','0.1')}</div>
+   <div class="grid3">${selIn('pgE','Ped GCS – Eye',gcsP(4,E))}${selIn('pgV','Verbal (infant / child)',gcsP(5,V))}${selIn('pgM','Motor',gcsP(6,M))}</div>
+   <div class="grid3">${w('wLoc','Westley: consciousness',[['0','Normal (0)'],['5','Disoriented (5)']])}${w('wCy','Westley: cyanosis',[['0','None (0)'],['4','With agitation (4)'],['5','At rest (5)']])}${w('wSt','Westley: stridor',[['0','None (0)'],['1','With agitation (1)'],['2','At rest (2)']])}${w('wAe','Westley: air entry',[['0','Normal (0)'],['1','Decreased (1)'],['2','Markedly decreased (2)']])}${w('wRe','Westley: retractions',[['0','None (0)'],['1','Mild (1)'],['2','Moderate (2)'],['3','Severe (3)']])}</div>
+  </details>`;
+}
+const PD_SELECTS = ['imm','feed','uo','act','patA','patB','patC','pgE','pgV','pgM','wLoc','wCy','wSt','wAe','wRe'], PD_NUMS = ['anc','crp','pct','esr','ph','hco3'];
+function ageYears(){ const a=num($('age').value); if(a==null) return null; const u=$('ageU').value; return u==='d'?a/365.25:u==='wk'?a*7/365.25:u==='mo'?a/12:a; }
+function paintPeds(D){
+  $('sec-pd').hidden = !PDM; const b=$('pdMode'); b.classList.toggle('on',PDM); b.setAttribute('aria-pressed',PDM?'true':'false');
+  const n = D && D.n; if(!n || !PDM) return;
+  const rg = n.rng, wIn = num($('pdWt').value) || num($('wt').value);
+  $('pdRange').textContent = rg ? `Normal for ${rg.band}: HR ${rg.hr[0]}–${rg.hr[1]} · RR ${rg.rr[0]}–${rg.rr[1]} (fast breathing ≥ ${rg.fast}) · SBP ${rg.sbp[0]}–${rg.sbp[1]} · hypotension < ${rg.hypo}.` : 'Enter age (👤 Patient) for age-specific ranges.';
+  $('pdWt').placeholder = n.wtEst ? 'APLS est. '+n.wtEst+' kg' : 'weigh the child';
+  $('pdWtNote').textContent = wIn ? '' : n.wtEst ? `Doses use the APLS age-based estimate (${n.wtEst} kg) until a weight is entered. APLS formulas tend to overestimate the weight of Filipino children – weigh the child (or use a length-based tape) whenever possible.` : (n.age!=null && n.age>12 ? 'APLS estimate not valid over 12 y – enter the measured weight for doses.' : 'Enter weight (or age for an APLS estimate) for doses.');
+}
 function sec(id, title, body, open){ return `<details class="card" id="sec-${id}" ${open?'open':''}><summary><span>${title}</span><span class="cnt" id="cnt-${id}" hidden></span></summary>${body}</details>`; }
 function buildForm(){
   const ccOpts = ['', ...Object.keys(CC_MAP), 'Other'].map(c=>`<option value="${esc(c)}">${c?esc(c):'— select —'}</option>`).join('');
   const legend = `<div class="legend">Tap a chip once = present (+), twice = absent (−), three times = clear. Unmarked = not assessed.</div>`;
   $('form').innerHTML =
-  sec('pt','👤 Patient', `<div class="grid2">${numIn('age','Age (years)','e.g. 45')}<div><label>Sex</label><div class="seg" id="sexseg"><button type="button" data-sex="M">Male</button><button type="button" data-sex="F">Female</button></div></div></div>
+  sec('pt','👤 Patient', `<div class="grid2"><div><label for="age">Age</label><div style="display:flex;gap:.3rem"><input id="age" type="number" inputmode="decimal" placeholder="e.g. 45" style="min-width:0"><select id="ageU" aria-label="Age unit" style="width:4.1rem;flex:0 0 auto;padding-left:.3rem;padding-right:.1rem"><option value="y" selected>y</option><option value="mo">mo</option><option value="wk">wk</option><option value="d">d</option></select></div></div><div><label>Sex</label><div class="seg" id="sexseg"><button type="button" data-sex="M">Male</button><button type="button" data-sex="F">Female</button></div></div></div>
     <div class="grid2" id="pregrow" hidden><div><label for="preg">Pregnancy</label><select id="preg"><option value="unk">Unknown / not asked</option><option value="yes">Pregnant (confirmed)</option><option value="possible">Possible (late period)</option><option value="no">Not pregnant (test negative)</option></select></div>${numIn('ga','Gestation (weeks)','if pregnant')}</div>`, true) +
+  sec('pd','🧒 Pediatric – PAT, IMCI danger signs, weight', pedsForm(), true) +
   sec('tr','🩻 Trauma – primary & secondary survey', traumaForm(), true) +
   sec('hpi','🗣 Chief complaint & HPI', `<label for="cc">Chief complaint</label><select id="cc">${ccOpts}</select>
     <div class="grid3 durrow"><div><label for="onset">Onset</label><select id="onset"><option value="">—</option><option value="sudden">Sudden (sec–min)</option><option value="acute">Acute (hours)</option><option value="subacute">Subacute (days)</option><option value="gradual">Gradual / chronic</option></select></div>
@@ -74,30 +107,32 @@ function buildForm(){
     ${chipHTML('bed')}<label class="chk"><input type="checkbox" id="peLikely"> Clinician judgment: PE is the most likely diagnosis (Wells +3)</label>`, false);
 }
 function paintChips(){ document.querySelectorAll('.chip[data-f]').forEach(b=>{ const v=CH[b.dataset.f]; b.classList.toggle('p',v===1); b.classList.toggle('n',v===-1); b.setAttribute('aria-pressed', v===1?'true':v===-1?'mixed':'false'); });
-  const secs={hpi:['hx_gen','hx_cr','hx_gi','hx_gu','hx_neuro','hx_exp'],pmh:['pmh','meds'],pe:['pe_gen','pe_heent','pe_resp','pe_cvs','pe_abd','pe_neuro','pe_skin'],bed:['bed'],tr:TR_GROUPS};
+  const secs={hpi:['hx_gen','hx_cr','hx_gi','hx_gu','hx_neuro','hx_exp'],pmh:['pmh','meds'],pe:['pe_gen','pe_heent','pe_resp','pe_cvs','pe_abd','pe_neuro','pe_skin'],bed:['bed'],tr:TR_GROUPS,pd:['pd_ds','pd_hx','pd_pe','pd_kd']};
   ['tr_head','tr_neck','tr_chest','tr_abd','tr_spine','tr_ext','tr_preg'].forEach(g=>secs[g]=[g]);
   Object.entries(secs).forEach(([s,gs])=>{ const n=gs.reduce((a,g)=>a+FGROUPS[g].f.filter(([id])=>CH[id]).length,0); const e=$('cnt-'+s); if(!e) return; e.hidden=!n; e.textContent=n; }); }
 function paintTrauma(){
   $('sec-tr').hidden = !TR; const b=$('trMode'); b.classList.toggle('on',TR); b.setAttribute('aria-pressed',TR?'true':'false');
   $('trs-tr_preg').hidden = SEX!=='F';
   const pr=$('trPreg'), pg = SEX==='F' && $('preg').value==='yes'; pr.classList.toggle('p',pg); pr.setAttribute('aria-pressed',pg?'true':'false');
-  const a=num($('age').value); $('trCtx').textContent = [a!=null?(a>=65?'Age ≥ 65 – geriatric trauma thresholds apply':a<16?'Child – weight-based doses, PECARN':'Age '+a):'Age not entered (👤 Patient)', SEX==='F'?(pg?'pregnant'+($('ga').value?' '+$('ga').value+' wk':''):'pregnancy: '+$('preg').selectedOptions[0].text):''].filter(Boolean).join(' · ');
+  const a=ageYears(); $('trCtx').textContent = [a!=null?(a>=65?'Age ≥ 65 – geriatric trauma thresholds apply':a<16?'Child – weight-based doses, PECARN':'Age '+$('age').value):'Age not entered (👤 Patient)', SEX==='F'?(pg?'pregnant'+($('ga').value?' '+$('ga').value+' wk':''):'pregnancy: '+$('preg').selectedOptions[0].text):''].filter(Boolean).join(' · ');
   const E=$('gcsE').value, V=$('gcsV').value, M=$('gcsM').value; $('gcsTot').textContent = (E&&V&&M) ? `E${E} V${V} M${M} = ${+E + +V + +M}` : ($('gcs').value ? $('gcs').value+' (from Vital signs)' : '—'); }
 function syncMirror(fromVitals){ MIRROR.forEach(([a,b])=>{ if(fromVitals) $(a).value=$(b).value; else $(b).value=$(a).value; }); }
 const num = v => (v===''||v==null||isNaN(+v)) ? null : +v;
 function paintSex(){ document.querySelectorAll('#sexseg button').forEach(b=>b.classList.toggle('on', b.dataset.sex===SEX)); $('pregrow').hidden = SEX!=='F'; paintTrauma(); }
 const val = id => $(id).value;
 function readInput(){
-  return { age:val('age'), sex:SEX, preg:SEX==='F'?val('preg'):'', ga:val('ga'), cc:val('cc')==='Other'?'':val('cc'), onset:val('onset'), dur:val('dur'), durU:val('durU'), feverDay:val('feverDay'),
+  return { age:val('age'), ageU:val('ageU'), sex:SEX, preg:SEX==='F'?val('preg'):'', ga:val('ga'), cc:val('cc')==='Other'?'':val('cc'), onset:val('onset'), dur:val('dur'), durU:val('durU'), feverDay:val('feverDay'),
     chips:Object.assign({},CH), text:val('text'), meds:val('meds'), peLikely:$('peLikely').checked,
     v:{hr:val('hr'),sbp:val('sbp'),dbp:val('dbp'),rr:val('rr'),t:val('t'),spo2:val('spo2'),gcs:val('gcs'),glu:val('glu'),gluU:val('gluU'),o2:$('o2').checked},
     lab:{wbc:val('wbc'),neut:val('neut'),plt:val('plt'),hct:val('hct'),urea:val('urea'),ureaU:val('ureaU'),lactate:val('lactate')},
-    tr:{on:TR, injT:val('injT'), injU:val('injU'), fallM:val('fallM'), wt:val('wt'), bd:val('bd'), tbsa:val('tbsa'), air:val('air'), bs:val('bs'), pup:val('pup'), gcsE:val('gcsE'), gcsV:val('gcsV'), gcsM:val('gcsM')} };
+    tr:{on:TR, injT:val('injT'), injU:val('injU'), fallM:val('fallM'), wt:val('wt'), bd:val('bd'), tbsa:val('tbsa'), air:val('air'), bs:val('bs'), pup:val('pup'), gcsE:val('gcsE'), gcsV:val('gcsV'), gcsM:val('gcsM')},
+    pd:Object.assign({on:PDM, wt:val('pdWt')}, ...PD_SELECTS.concat(PD_NUMS).map(k=>({[k]:val(k)}))) };
 }
 function clearForm(){
   document.querySelectorAll('#form input, #form textarea').forEach(e=>{ if(e.type==='checkbox') e.checked=false; else e.value=''; });
   $('preg').value='unk'; $('cc').value=''; $('onset').value=''; $('durU').value='d'; $('gluU').value='mg'; $('ureaU').value='mmol';
   ['air','bs','pup','gcsE','gcsV','gcsM'].forEach(k=>$(k).value=''); $('injU').value='h';
+  $('ageU').value='y'; PD_SELECTS.forEach(k=>$(k).value=''); PDM=false; pdManual=null;
   CH={}; SEX=''; PLAN=null; planTouched=false; TR=false; trManualOff=false; paintChips(); paintSex();
 }
 function loadCase(id){
@@ -109,6 +144,8 @@ function loadCase(id){
   const T=I.tr||{}; ['injT','injU','fallM','wt','bd','tbsa','air','bs','pup','gcsE','gcsV','gcsM'].forEach(k=>setv(k,T[k]));
   if(T.gcsE&&T.gcsV&&T.gcsM&&!(I.v||{}).gcs) $('gcs').value = +T.gcsE + +T.gcsV + +T.gcsM;
   TR=!!T.on; syncMirror(true);
+  const PI=I.pd||{}; setv('ageU',I.ageU||'y'); PD_SELECTS.concat(PD_NUMS).forEach(k=>setv(k,PI[k])); setv('pdWt',PI.wt!=null?PI.wt:T.wt); if(!$('wt').value && PI.wt!=null) $('wt').value=PI.wt;
+  if(PI.on!=null) pdManual=!!PI.on;
   CH=Object.assign({},I.chips); paintChips(); paintSex(); render();
 }
 
@@ -118,6 +155,12 @@ function tkHTML(c){ const [id,q,title,ts]=c.tk; const sn=ts||c.sec; const where=
   const also = (c.tkx||[]).map(([xid,xt,xs])=>`<a href="${TK_BASE}#o-${esc(xid)}" data-tk="${esc(xid)}" target="_blank" rel="noopener noreferrer" title="${esc(TK_SEC[xs]||'')}">${esc(xt)}</a>`).join(' · ');
   return (id ? `<div class="tk">📘 EM Toolkit: <a href="${TK_BASE}#o-${esc(id)}" data-tk="${esc(id)}" target="_blank" rel="noopener noreferrer">${esc(where)}</a> · search “${esc(q)}”</div>` : `<div class="tk">📘 EM Toolkit: ${esc(where)} · search “${esc(q)}”</div>`)
     + (also ? `<div class="tk">🔗 Related toolkit cards: ${also}</div>` : ''); }
+// weight-based doses (pediatric mode) and IMCI-style home-care advice
+function doseHTML(c){ if(!c.dz || !last || !(PDM || c.pd)) return ''; const d=condDoses(c,last.D); if(!d) return '';
+  const wt = d.wt ? `${d.wt} kg${d.est?' – APLS estimate, weigh the child':''}` : 'no weight entered';
+  return `<div class="blk pdz"><h4>⚖️ Weight-based doses <span class="vtag">⚠ VERIFY</span> <span class="note">for ${esc(wt)}</span></h4><table class="dz"><tbody>${d.rows.map(r=>`<tr><td>${esc(r.n)}</td><td>${r.txt?`<b>${esc(r.txt)}</b>`:'<span class="note">enter weight / age</span>'}${r.capped?` <span class="cap" title="The weight-based dose exceeds the usual adult maximum">capped at adult max ${esc(fmtN(r.max))} ${esc(r.u)}</span>`:''}${r.floored?' <span class="cap">minimum dose</span>':''}<div class="note">${esc([r.perKg,r.basis,r.r,r.x].filter(Boolean).join(' · '))}</div></td></tr>`).join('')}</tbody></table><div class="src">Computed as weight × dose/kg, capped at the usual adult maximum. Check concentration, route, renal function and local formulary – ⚠ VERIFY every dose.</div></div>`; }
+function homeHTML(c){ if(!c.home || !c.home.length || !(PDM || c.pd)) return '';
+  return `<div class="blk pdh"><h4>🏠 Home care & return advice (IMCI-style)</h4><ul>${c.home.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>${srcHTML(PD_IMCI+' · '+(c.dps||c.txs||''))}</div>`; }
 function cardCompact(r, top, rank){
   const c=r.c, pct=Math.max(4,Math.min(100, r.s/top*100)), t=tier(r.s);
   return `<div class="dx mnm cmp" data-id="${c.id}" id="m-${c.id}">
@@ -145,6 +188,7 @@ function card(r, top, opts){
      <div class="blk"><h4>🔬 Recommended diagnostics (prioritised)</h4><ol style="margin:.15rem 0 0;padding-left:1.2rem;font-size:.86rem">${c.dx.map(x=>`<li>${esc(x)}</li>`).join('')}</ol>${srcHTML(c.dxs)}</div>
      <div class="blk"><h4>💊 Initial ED treatment</h4><ul>${c.tx.map(x=>`<li>${vt(x)}</li>`).join('')}</ul>${srcHTML(c.txs)}</div>
      <div class="blk"><h4>🏥 Disposition</h4><div style="font-size:.86rem">${esc(c.dispo)}</div>${c.dps?srcHTML(c.dps):''}</div>
+     ${doseHTML(c)}${homeHTML(c)}
      ${tkHTML(c)}
    </details>
    <label class="inc"><input type="checkbox" data-plan="${c.id}" ${inPlan?'checked':''}> Include this plan in the chart note</label>
@@ -154,7 +198,9 @@ function hasInput(I){ return I.tr.on || Object.keys(I.chips).length || I.text.tr
 function render(){
   let I=readInput(); let D=derive(I);
   if(!TR && !trManualOff && D.F.trauma===1){ TR=true; paintTrauma(); toast('🩻 Trauma mode on – injury recorded'); I=readInput(); D=derive(I); }
+  { const ay=ageYears(), want = pdManual!=null ? pdManual : (ay!=null && ay<18); if(want!==PDM){ PDM=want; if(PDM && pdManual==null) toast('🧒 Pediatric mode on – age < 18'); I=readInput(); D=derive(I); } }
   D.peLikely=I.peLikely; const R=scoreAll(D); const S=computeScores(D,R); const A=alerts(D); paintTrauma();
+  paintPeds(D);
   if(!planTouched) PLAN = new Set(R.ddx.slice(0,2).map(r=>r.id));
   last={I,D,R,S};
   // extracted chips
@@ -208,6 +254,9 @@ function init(){
   $('clear').addEventListener('click',()=>{ clearForm(); $('example').value=''; render(); toast('Cleared'); });
   $('jump').addEventListener('click',()=>$('results').scrollIntoView({behavior:'smooth'}));
   $('trMode').addEventListener('click',()=>{ TR=!TR; trManualOff=!TR; paintTrauma(); if(TR){ syncMirror(true); $('sec-tr').open=true; } render(); toast(TR?'🩻 Trauma mode on – primary survey first':'Trauma mode off'); });
+  $('pdMode').addEventListener('click',()=>{ pdManual=!PDM; PDM=pdManual; paintPeds(last&&last.D); if(PDM) $('sec-pd').open=true; render(); toast(PDM?'🧒 Pediatric mode on':'Pediatric mode off – adult rules'); });
+  $('form').addEventListener('input',e=>{ if(e.target.id==='wt') $('pdWt').value=$('wt').value; else if(e.target.id==='pdWt') $('wt').value=$('pdWt').value; });
+  window.DDX_PEDS = () => ({on:PDM, manual:pdManual, age:ageYears()});
   $('form').addEventListener('input',e=>{ const id=e.target.id; const m=MIRROR.find(x=>x[0]===id||x[1]===id); if(m){ if(id===m[0]) $(m[1]).value=$(m[0]).value; else $(m[0]).value=$(m[1]).value; }
     if(id==='gcs' && $('gcsE').value && $('gcsV').value && $('gcsM').value && +$('gcs').value !== +$('gcsE').value + +$('gcsV').value + +$('gcsM').value){ ['gcsE','gcsV','gcsM'].forEach(k=>$(k).value=''); } });
   $('form').addEventListener('change',e=>{ if(['gcsE','gcsV','gcsM'].includes(e.target.id)){ const E=$('gcsE').value,V=$('gcsV').value,M=$('gcsM').value; if(E&&V&&M) $('gcs').value= +E + +V + +M; } if(['preg','ga','age','gcsE','gcsV','gcsM'].includes(e.target.id)) paintTrauma(); });

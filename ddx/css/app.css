@@ -1,4 +1,5 @@
 /* DDx Assist – styles matched to EM Toolkit (same CSS variables, dark/light via body.dark) */
+[hidden]{display:none!important}
 :root{--bg:#fff;--fg:#1a1a1a;--muted:#555;--card:#f4f7fb;--border:#ccc;--input:#fff;--accent:#0a66c2;--warn:#8a5a00;--ok:#0b5;--hl:#ffe9a8;--red:#c0392b;--redbg:#fdecea;--peds:#7b3fb5}
 body.dark{--bg:#0d0f12;--fg:#e6e6e6;--muted:#9aa3ad;--card:#1a1e24;--border:#333a44;--input:#14181d;--accent:#5aa9ff;--warn:#d9a441;--ok:#4cd28a;--hl:#3a3216;--red:#e5533f;--redbg:#2b1512;--peds:#b98aff}
 *{box-sizing:border-box}
@@ -136,3 +137,19 @@ details.sub .chips{margin-top:.35rem}
 .psr.unk .pk{background:var(--muted)}
 .psr.tc .pk{background:var(--accent)}
 .psl{font-size:.76rem;color:var(--accent);white-space:nowrap}
+
+/* pediatric mode */
+.pdm.on{background:var(--peds);color:#fff;border-color:var(--peds);font-weight:700}
+#sec-pd{border:2px solid var(--peds)}
+#sec-pd>summary{color:var(--peds)}
+#pdRange{font-weight:600;color:var(--peds)}
+.blk.pdz,.blk.pdh{border-left:3px solid var(--peds);padding-left:.5rem}
+table.dz{width:100%;border-collapse:collapse;font-size:.84rem;margin-top:.2rem;table-layout:fixed}
+table.dz td{padding:.25rem .3rem;border-top:1px solid var(--border);vertical-align:top;overflow-wrap:anywhere}
+table.dz td:first-child{width:38%;font-weight:600}
+.cap{display:inline-block;font-size:.72rem;font-weight:700;color:#fff;background:var(--warn);border-radius:6px;padding:0 .35rem;margin-left:.2rem}
+@media (max-width:480px){
+  .toolbar{gap:.3rem;flex-wrap:wrap}
+  .toolbar select{flex:1 1 100%;width:auto}
+  .toolbar button{flex:1 1 auto;padding-left:.42rem;padding-right:.42rem}
+}

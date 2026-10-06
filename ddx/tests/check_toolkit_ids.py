@@ -21,9 +21,10 @@ with sync_playwright() as p:
       const s=SECTIONS.find(x=>(x.panels||[]).some(p=>p[0]===CARDS[c].tab)); return [id,c,s?s.n:null]; })""", ids)
     b.close()
 bad = [r[0] for r in res if not r[1]]
-# section mismatches only reported for trauma-mode links (sources tr_*/ps.*); legacy mismatches are informational
-mism = [(r[0], r[2], w) for r in res if r[1] for (w, s) in ids[r[0]] if s is not None and s != r[2] and (w.startswith('tr_') or w.startswith('ps.'))]
-legacy = sorted({(r[0], r[2]) for r in res if r[1] for (w, s) in ids[r[0]] if s is not None and s != r[2] and not w.startswith('tr_')})
-print(f'{len(res)} card ids checked against {URL}; unresolved: {bad}; trauma section mismatches: {mism}')
-if legacy: print('info – legacy (pre-trauma) section labels differing from the card tab:', legacy)
+# section mismatches are enforced for trauma-mode and pediatric links (sources tr_*/ps.*/pd_*); legacy mismatches are informational
+STRICT = ('tr_', 'ps.', 'pd_')
+mism = [(r[0], r[2], w) for r in res if r[1] for (w, s) in ids[r[0]] if s is not None and s != r[2] and w.startswith(STRICT)]
+legacy = sorted({(r[0], r[2]) for r in res if r[1] for (w, s) in ids[r[0]] if s is not None and s != r[2] and not w.startswith(STRICT)})
+print(f'{len(res)} card ids checked against {URL}; unresolved: {bad}; trauma/pediatric section mismatches: {mism}')
+if legacy: print('info – legacy (pre-trauma/peds) section labels differing from the card tab:', legacy)
 sys.exit(1 if bad or mism else 0)
